@@ -34,9 +34,10 @@ public class AddBlocks : MonoBehaviour {
 
         GameObject clone;
         clone = Instantiate(prefab, transform.position, transform.rotation);
-        //add pillar script
         clone.transform.parent = transform;
-        clone.transform.localScale = new Vector3(scale, scale, scale);
+        clone.GetComponent<HouseGenerator>().Generate(new Vector3(1,0.01f, 1), 1 + Random.Range(-0.1f,0.1f));
+        
+       
 
         
         xStepper = -1 + indexValueX * 2;
@@ -47,7 +48,7 @@ public class AddBlocks : MonoBehaviour {
                                                                       transform.localScale.z / 2 + clone.transform.lossyScale.z /2);
 
       
-        clone.GetComponent<Renderer>().material.color = new Color(Random.Range(0, 1f), 0, 0);
+      //  clone.GetComponent<Renderer>().material.color = new Color(Random.Range(0, 1f), 0, 0);
     }
 
 
