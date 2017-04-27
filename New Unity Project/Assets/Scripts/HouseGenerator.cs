@@ -6,17 +6,34 @@ public class HouseGenerator : MonoBehaviour {
 
     public Vector3 floorDimensions;
     public float wallHeight;
-	// Use this for initialization
-	//void Start () {
- //       Application.targetFrameRate = 300;
- //       GenerateFloor();
- //       GenerateWalls(floor);
- //       GenerateRoof();
- //       GenerateSupport();
-	//}
-	
-	// Update is called once per frame
-	void Update () {
+
+    public bool inGenerator = true;
+
+    public float minHeightBeforeSupport = 0.1f;
+    public float minHeightBeforeAngledSupport = 0.1f;
+    public Vector3 supportDimensions = new Vector3(0.1f, 0, 0.1f);
+
+
+    GameObject floor;
+    private Vector3[] wallPositions;
+    Vector3[] wallScales;
+    // Use this for initialization
+    void Start()
+    {
+        Application.targetFrameRate = 300;
+
+        if (!inGenerator)
+        {
+            supportDimensions = floorDimensions / 10f;
+            GenerateFloor();
+            GenerateWalls(floor);
+            GenerateRoof();
+            GenerateSupport();
+        }
+    }
+
+    // Update is called once per frame
+    void Update () {
 		
 	}
 
@@ -24,13 +41,13 @@ public class HouseGenerator : MonoBehaviour {
     {
         floorDimensions = floorDim;
         this.wallHeight = wallHeight;
+        supportDimensions = floorDim / 10f;
         GenerateFloor();
         GenerateWalls(floor);
         GenerateRoof();
         GenerateSupport();
     }
 
-    GameObject floor;
     void GenerateFloor()
     {
         floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -39,13 +56,12 @@ public class HouseGenerator : MonoBehaviour {
         floor.transform.parent = transform;
     }
 
-    private Vector3[] wallPositions;
-    Vector3[] wallScales;
+ 
     void GenerateWalls(GameObject floor)
     {
         Vector3 floorPos = floor.transform.position;
         wallPositions = new Vector3[]{ new Vector3(0, wallHeight/2, floorDimensions.z/2) , new Vector3(floorDimensions.x / 2, wallHeight / 2, 0) , new Vector3(0, wallHeight / 2, -floorDimensions.z / 2), new Vector3(-floorDimensions.x / 2, wallHeight / 2, 0) };
-         wallScales = new Vector3[] { new Vector3(floorDimensions.x, wallHeight, 0.1f), new Vector3(0.1f, wallHeight, floorDimensions.z) };
+         wallScales = new Vector3[] { new Vector3(floorDimensions.x, wallHeight, 0.1f/10), new Vector3(0.1f / 10, wallHeight, floorDimensions.z) };
 
         for (int i = 0; i < 4; i++)
         {
@@ -64,9 +80,7 @@ public class HouseGenerator : MonoBehaviour {
         roof.transform.parent = transform;
     }
 
-    public float minHeightBeforeSupport = 0.1f;
-    public float minHeightBeforeAngledSupport = 0.1f;
-    public Vector3 supportDimensions = new Vector3(0.1f, 0, 0.1f);
+  
 
     void GenerateSupport()
     {
@@ -77,10 +91,8 @@ public class HouseGenerator : MonoBehaviour {
 
         for (int i = 0; i < 4; i++)
         {
-            Debug.Log(supportHeight);
-
             Ray downRay = new Ray(floor.transform.position + supportPositions[i] / 2, -transform.up);
-            Debug.DrawRay(floor.transform.position + supportPositions[i]/2, -transform.up, Color.red,5f);
+            Debug.DrawRay(floor.transform.position + supportPositions[i] / 2, -transform.up, Color.red,5f);
 
             RaycastHit hit;
             if (Physics.Raycast(downRay, out hit))
@@ -120,7 +132,7 @@ public class HouseGenerator : MonoBehaviour {
         GameObject support = GameObject.CreatePrimitive(PrimitiveType.Cube);
         support.transform.parent = transform;
 
-        support.transform.position = transform.position + beamPos/2 + new Vector3(0, supportY,0);
+        support.transform.position = transform.position + beamPos/2.5f + new Vector3(0, supportY,0);
         support.transform.localScale = supportDimensions + new Vector3(0, supportHeight, 0);
 
     }
@@ -142,7 +154,22 @@ public class HouseGenerator : MonoBehaviour {
         GameObject support = GameObject.CreatePrimitive(PrimitiveType.Cube);
         support.transform.parent = transform;
         support.transform.rotation = beamOrientation;
-        support.transform.position = transform.position + beamPos / 2 + new Vector3(0, supportY/2, supportY / 2);
+
+        Vector3 properbeamDirection = (-transform.up) - (transform.forward);
+
+
+        support.transform.position = (transform.position + beamPos / 2.5f) + properbeamDirection.normalized*supportLength/2;
+
         support.transform.localScale = supportDimensions + new Vector3(0, supportLength, 0);
+    }
+
+    void GenerateTerrace()
+    {
+
+    }
+
+    void GeneratePathWay()
+    {
+
     }
 }

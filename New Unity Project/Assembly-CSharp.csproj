@@ -89,8 +89,6 @@
      <Compile Include="Assets\ProceduralToolkit\Examples\ChairGenerator\ChairGenerator.cs" />
      <Compile Include="Assets\ProceduralToolkit\Examples\ChairGenerator\ChairGeneratorConfigurator.cs" />
      <Compile Include="Assets\ProceduralToolkit\Examples\ChairGenerator\Stretchers.cs" />
-     <Compile Include="Assets\ProceduralToolkit\Examples\CharacterGenerator\CharacterGenerator.cs" />
-     <Compile Include="Assets\ProceduralToolkit\Examples\CharacterGenerator\NameGenerator.cs" />
      <Compile Include="Assets\ProceduralToolkit\Examples\Common\ButtonControl.cs" />
      <Compile Include="Assets\ProceduralToolkit\Examples\Common\CameraRotator.cs" />
      <Compile Include="Assets\ProceduralToolkit\Examples\Common\ConfiguratorBase.cs" />
@@ -141,8 +139,6 @@
      <None Include="Assets\ProceduralToolkit\Shaders\Standard Vertex Color.shader" />
      <None Include="Assets\ProceduralToolkit\Shaders\Gradient Skybox.shader" />
      <None Include="Assets\Noise\noiseSimplex.cginc" />
-     <None Include="Assets\ProceduralToolkit\Examples\CharacterGenerator\names.txt" />
-     <None Include="Assets\ProceduralToolkit\Examples\CharacterGenerator\Sprites\license.txt" />
      <None Include="Assets\ProceduralToolkit\Shaders\Debug\Debug UV1.shader" />
      <None Include="Assets\ProceduralToolkit\Shaders\Debug\Debug Bitangents.shader" />
      <None Include="Assets\Noise\ProceduralCubes.compute" />

@@ -57,8 +57,6 @@
      <None Include="Assets\ProceduralToolkit\Shaders\Standard Vertex Color.shader" />
      <None Include="Assets\ProceduralToolkit\Shaders\Gradient Skybox.shader" />
      <None Include="Assets\Noise\noiseSimplex.cginc" />
-     <None Include="Assets\ProceduralToolkit\Examples\CharacterGenerator\names.txt" />
-     <None Include="Assets\ProceduralToolkit\Examples\CharacterGenerator\Sprites\license.txt" />
      <None Include="Assets\ProceduralToolkit\Shaders\Debug\Debug UV1.shader" />
      <None Include="Assets\ProceduralToolkit\Shaders\Debug\Debug Bitangents.shader" />
      <None Include="Assets\Noise\ProceduralCubes.compute" />
