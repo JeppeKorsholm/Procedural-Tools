@@ -1,4 +1,5 @@
-﻿// Each #kernel tells which function to compile; you can have many kernels
+﻿// shadertype=<type>
+// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
 #pragma kernel CSSecond
 
@@ -756,13 +757,13 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 }
 
 
-//RWTexture1D<float> SecondResult;
+//RWTexture2D<float> SecondResult;
 
 float Pattern(float2 p, NoiseInfo inf)
 {
     float2 q = float2(Sum(p + float2(0.0, 0.0), inf).x, Sum(p + float2(5.2f, 1.3f), inf).x);
 
-    float2 r = float2(Sum(p + 4.0f * q + float2(1.7f, 9.2f), inf).x, Sum(p + 4.0f * q + float2(8.2f, 2.8f), inf).x);
+    float2 r = float2(Sum(p + 4.0f * q + float2(1.7f, 9.2f), inf).x, Sum(p + 4.0f * q + float2(4.2f, 1.8f), inf).x);
 
     return Sum(p + 4.0 * q,inf).x;
 }
@@ -780,11 +781,11 @@ void CSSecond(uint2 id : SV_DispatchThreadID)
     half3 Vector3point = lerp(point0, point1, (id.x) / (float) yWidth);
 	// TODO: insert actual code here!
 	//Result[id.xy] = float4(((id.x) / (float) id.y), ((id.y)/ (float) id.x), 0, 1);
-    float noisefloat = 1.0f;
+    float4 noisefloat = float4(1,1,1,1);
 	//Shows UVs Tiled
     uint numStructs;
     uint stride;
-
+    float2 p = Vector3point.xy;
     noiseInfoBuffer.GetDimensions(numStructs, stride); 
     const float2x2 m = float2x2(0.8, -0.6, 0.6, 0.8);
     for (uint i = 0; i < numStructs; i++)
@@ -792,33 +793,34 @@ void CSSecond(uint2 id : SV_DispatchThreadID)
         switch (noiseInfoBuffer[i].noiseType)
         {
             case 0:
-                noisefloat += (Sum(Vector3point.xy, noiseInfoBuffer[i]).x * (noiseInfoBuffer[i].weight));
+                noisefloat += (Sum(p, noiseInfoBuffer[i]).x * 0.5 + 0.5) * (noiseInfoBuffer[i].weight) ;
                 break;
             case 1:
-                noisefloat += (abs(Sum(Vector3point.xy, noiseInfoBuffer[i]).x) * (noiseInfoBuffer[i].weight));
+                noisefloat += (abs(Sum(p, noiseInfoBuffer[i]).x * 0.5 + 0.5) * (noiseInfoBuffer[i].weight));
                 break;
             case 2:
-                noisefloat += ((1 - abs(Sum(Vector3point.xy, noiseInfoBuffer[i]).x)) * (noiseInfoBuffer[i].weight));
+                noisefloat += (1 - ((abs(Sum(p, noiseInfoBuffer[i]).x) * 0.5 + 0.5))) * (noiseInfoBuffer[i].weight);
                 break;
             case 3:
-                noisefloat += (Pattern(Vector3point.xy, noiseInfoBuffer[i]).x * (noiseInfoBuffer[i].weight)); //Sum(Vector3point.xy * Sum(Vector3point.xy, noiseInfoBuffer[i]), noiseInfoBuffer[i]) * noiseInfoBuffer[i].weight;
+                noisefloat += (Pattern(p, noiseInfoBuffer[i]).x * 0.5 + 0.5) * (noiseInfoBuffer[i].weight);
                 break;
             case 4:
-                float a = 0.0;
+                //float a = 0.0;
                 float b = 1.0;
                 float2 d = float2(0,0);
-                float2 p = Vector3point.xy;
+                
                 for (int j = 0; j < 15; j++)
                 {
                     float3 n = Sum(p, noiseInfoBuffer[i]);
                     d += n.yz;
-                    a += b * n.x / (1.0 + dot(d, d));
+                    noisefloat += b * n.x / (1.0 + dot(d, d));
                     b *= 0.5;
                     p = mul(m , p) * 2.0;
                 }
-                noisefloat += a; //* noiseInfoBuffer[i].weight); //((noise.x / ((1 - Dot(deriv.xy, deriv.x, deriv.y) * 0.5f)) * (noiseInfoBuffer[i].weight)));
+                noisefloat = noisefloat *   0.5 + 0.5; //* noiseInfoBuffer[i].weight); //((noise.x / ((1 - Dot(deriv.xy, deriv.x, deriv.y) * 0.5f)) * (noiseInfoBuffer[i].weight)));
                 break;
         }
+        p += noisefloat;
       }
 
 
@@ -829,10 +831,11 @@ void CSSecond(uint2 id : SV_DispatchThreadID)
     
     //noisefloat -= (1-abs(Sum(Vector3point.xy, 1,1))) * 0.50f;
 
-    Result[id.xy] = float4(1, 1, 1, 1) * noisefloat / numStructs;
+    Result[id.xy] = float4(noisefloat.x, noisefloat.x * ((noisefloat.y -     noisefloat.z) / 2), noisefloat.x * (noisefloat.y + noisefloat.z) / 2, 1) / numStructs;
 
-   
-    SecondResult[(id.x) + xWidth * id.y] = 1 * noisefloat / numStructs;
+    //SecondResult[id.xy] = 1 * noisefloat / numStructs;
+
+    SecondResult[(id.x) + xWidth * id.y] = noisefloat / numStructs;
 }
 
 

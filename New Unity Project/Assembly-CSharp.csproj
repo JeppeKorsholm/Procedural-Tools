@@ -57,6 +57,7 @@
      <Compile Include="Assets\Noise\Noise.cs" />
      <Compile Include="Assets\Noise\ProceduralCubes.cs" />
      <Compile Include="Assets\Noise\TextureCreator.cs" />
+     <Compile Include="Assets\Noise\useSimpleComputeShader.cs" />
      <Compile Include="Assets\NoiseSample.cs" />
      <Compile Include="Assets\ProceduralToolkit\ArrayE.cs" />
      <Compile Include="Assets\ProceduralToolkit\ColorE.cs" />
@@ -130,7 +131,7 @@
      <Compile Include="Assets\ProceduralToolkit\TextureE.cs" />
      <Compile Include="Assets\ProceduralToolkit\Vector2Int.cs" />
      <Compile Include="Assets\ProceduralToolkit\VectorE.cs" />
-     <Compile Include="Assets\Scenes\AddBlocks.cs" />
+     <Compile Include="Assets\Scripts\AddBlocks.cs" />
      <Compile Include="Assets\Scripts\CarSwitcher.cs" />
      <Compile Include="Assets\Scripts\DriftCamera.cs" />
      <Compile Include="Assets\Scripts\EasySuspension.cs" />
@@ -146,8 +147,10 @@
      <None Include="Assets\ProceduralToolkit\Shaders\Debug\Debug Bitangents.shader" />
      <None Include="Assets\Noise\ProceduralCubes.compute" />
      <None Include="Assets\ProceduralToolkit\Shaders\Unlit Vertex Color.shader" />
+     <None Include="Assets\Noise\TerrainGeometryShader.shader" />
      <None Include="Assets\ProceduralToolkit\Shaders\Diffuse Vertex Color.shader" />
      <None Include="Assets\ProceduralToolkit\Shaders\Debug\Debug Normals.shader" />
+     <None Include="Assets\Noise\PlaneDeformation.compute" />
      <None Include="Assets\ProceduralToolkit\Shaders\Debug\Debug UV2.shader" />
      <None Include="Assets\Noise\noise-simplex.shader" />
      <None Include="Assets\ProceduralToolkit\Shaders\Specular Vertex Color.shader" />

@@ -11,6 +11,8 @@ public class ComputeTextureCreator : MonoBehaviour {
     [Range(0f, 1f)]
     public float noiseAmplitude = 0.5f;
 
+    public Vector3 noiseScale = new Vector3(1, 1, 1);
+    public Vector3 noiseOffset = new Vector3(1, 1, 1);
     [System.Serializable]
     public class NoiseSettings
     {
@@ -45,6 +47,7 @@ public class ComputeTextureCreator : MonoBehaviour {
     private RenderTexture texture;
 
     public ComputeShader shader;
+    public Shader geometryShader;
 
     public Terrain terrain;
     public bool applyToTerrain = false;
@@ -66,14 +69,14 @@ public class ComputeTextureCreator : MonoBehaviour {
         texture.enableRandomWrite = true;
         texture.Create();
         texture.name = "Procedural Texture";
-        GetComponent<MeshRenderer>().sharedMaterial.mainTexture = texture;
+        //GetComponent<MeshRenderer>().sharedMaterial.mainTexture = texture;
     }
 
     void OnEnable()
     {
         _Kernel = shader.FindKernel("CSMain");
         _SecondKernel = shader.FindKernel("CSSecond");
-
+        pointMaterial = new Material(geometryShader);
         if (texture == null)
         {
             CreateTexture();
@@ -152,14 +155,13 @@ public class ComputeTextureCreator : MonoBehaviour {
          public float amplitude;
         public float weight;
     }
-
     void GenerateAndApplyToTerrain()
     {
-       
-        Vector3 point00 = transform.TransformPoint(new Vector3(-0.5f, -0.5f));
-        Vector3 point10 = transform.TransformPoint(new Vector3(0.5f, -0.5f));
-        Vector3 point01 = transform.TransformPoint(new Vector3(-0.5f, 0.5f));
-        Vector3 point11 = transform.TransformPoint(new Vector3(0.5f, 0.5f));
+        //Vector3 vectransform = new Vector3(noiseScale.x * noiseOffset.x, noiseScale.y * noiseOffset.y, noiseScale.z* noiseOffset.z);
+        Vector3 point00 = transform.TransformPoint(new Vector3(-0.5f * noiseScale.x, -0.5f * noiseScale.y) + noiseOffset);
+        Vector3 point10 = transform.TransformPoint(new Vector3(0.5f  * noiseScale.x, -0.5f * noiseScale.y) + noiseOffset);
+        Vector3 point01 = transform.TransformPoint(new Vector3(-0.5f *noiseScale.x, 0.5f * noiseScale.y) + noiseOffset);
+        Vector3 point11 = transform.TransformPoint(new Vector3(0.5f *noiseScale.x, 0.5f * noiseScale.y) + noiseOffset);
 
         Vector3[] posArray = { point00, point01, point10, point11 };
 
@@ -196,7 +198,6 @@ public class ComputeTextureCreator : MonoBehaviour {
 
         ComputeBuffer buffer = new ComputeBuffer(terrainHeightsInput.Length, sizeof(float));
         ComputeBuffer noiseInfoBuffer = new ComputeBuffer(noiseInputs.Length, (sizeof(float) * 5) + sizeof(int)*2);
-
         //Set noise information into buffer
         noiseInfoBuffer.SetData(noiseInputs);
         shader.SetBuffer(_SecondKernel, "noiseInfoBuffer", noiseInfoBuffer);
@@ -206,11 +207,13 @@ public class ComputeTextureCreator : MonoBehaviour {
         shader.Dispatch(_SecondKernel, resolution / 8, resolution / 8, 1);
         buffer.GetData(terrainHeightsOutput);
 
+
+        pointMaterial.SetBuffer("buf_points", buffer);
+
         if (applyToTerrain)
         {
             float[,] noiseHeightData = new float[resolution, resolution];
             float[,,] splatmapData = new float[resolution, resolution, terrainData.alphamapLayers];
-
             for (int x = 0; x < resolution; x++)
             {
                 for (int y = 0; y < resolution; y++)
@@ -222,9 +225,14 @@ public class ComputeTextureCreator : MonoBehaviour {
 
             //Debug.Log(noiseHeightData[5, 5]);
             terrainData.SetHeights(0, 0, noiseHeightData);
+            //GameObject _terrain = Terrain.CreateTerrainGameObject(terrainData);
+            terrain.ApplyDelayedHeightmapModification();
 
             if (applySplatMap)
+            {
                 ApplySplatMap(terrainData);
+                applySplatMap = false;
+            }
 
         }
 
@@ -338,30 +346,12 @@ public class ComputeTextureCreator : MonoBehaviour {
         terrainData.SetAlphamaps(0, 0, splatmapData);
 
     }
-
-    //float UnityNoise(int i , int j)
-    //{
-    //    float noise = 0;
-
-    //    noise += Mathf.PerlinNoise(i / perlinIntensity, j / perlinIntensity) * 0.5f;
-    //    noise += Mathf.PerlinNoise(i / (perlinIntensity *5), j / (perlinIntensity *5)) * 0.12f;
-    //    //noise += Mathf.PerlinNoise(i / 25f, j / 25f) * 0.12f;
-
-    //    //Billow
-
-    //    noise += Mathf.Abs(Mathf.PerlinNoise(i / billowIntensity, j / billowIntensity) * 0.12f);
-
-    //    //Ridge
-    //    noise += 1 - Mathf.Abs(Mathf.PerlinNoise(i / ridgeIntensity, j / ridgeIntensity) * 0.12f);
-
-
-    //    //Domain Warp
-    //    noise += Mathf.PerlinNoise(Mathf.PerlinNoise(Mathf.PerlinNoise(i / 40f, j / 40f) * 0.5f, Mathf.PerlinNoise(i / 100f, j / 60f)),
-    //        Mathf.PerlinNoise(Mathf.PerlinNoise(i / 1f, j / 1f) * 0.5f, Mathf.PerlinNoise(i / 5f, j / 5f))) * 0.12f;
-
-    //    noise *= 0.5f;
-
-    //    return noise;
-    //}
+    Material pointMaterial;
+   void OnRenderObject()
+    {
+        pointMaterial.SetPass(0);
+        pointMaterial.SetVector("_worldPos", transform.position);
+        Graphics.DrawProcedural(MeshTopology.Points, resolution * resolution);
+    }
 
 }

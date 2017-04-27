@@ -1,6 +1,7 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
+[CanEditMultipleObjects]
 [CustomEditor(typeof(ComputeTextureCreator))]
 public class TextureCreatorInspector : Editor {
 

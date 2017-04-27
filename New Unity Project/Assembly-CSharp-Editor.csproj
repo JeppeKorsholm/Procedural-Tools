@@ -63,8 +63,10 @@
      <None Include="Assets\ProceduralToolkit\Shaders\Debug\Debug Bitangents.shader" />
      <None Include="Assets\Noise\ProceduralCubes.compute" />
      <None Include="Assets\ProceduralToolkit\Shaders\Unlit Vertex Color.shader" />
+     <None Include="Assets\Noise\TerrainGeometryShader.shader" />
      <None Include="Assets\ProceduralToolkit\Shaders\Diffuse Vertex Color.shader" />
      <None Include="Assets\ProceduralToolkit\Shaders\Debug\Debug Normals.shader" />
+     <None Include="Assets\Noise\PlaneDeformation.compute" />
      <None Include="Assets\ProceduralToolkit\Shaders\Debug\Debug UV2.shader" />
      <None Include="Assets\Noise\noise-simplex.shader" />
      <None Include="Assets\ProceduralToolkit\Shaders\Specular Vertex Color.shader" />
