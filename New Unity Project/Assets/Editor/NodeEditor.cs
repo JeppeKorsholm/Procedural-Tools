@@ -5,16 +5,39 @@ using UnityEditor;
 using System;
 
 public class NodeEditor : EditorWindow {
-
+    
     private List<BaseNode> nodes = new List<BaseNode>();
+    private WindowEditorNodeSaver saver;
     private Vector2 mousePos;
     private BaseNode selectedNode;
     private bool makeTransitionMode = false;
-
+    static NodeEditor editor;
+    private string saverName = "aaaNoise";
+    private string pathName = "Assets/NoiseAssets/";
+    void Awake()
+    {
+        pathName = pathName + saverName + ".asset";
+        try
+        {
+            Debug.Log("loading asset");
+            saver = (WindowEditorNodeSaver)AssetDatabase.LoadAssetAtPath(pathName, typeof(WindowEditorNodeSaver));
+            nodes = saver.nodes;
+        }
+        catch { }
+        if (!saver)
+        {
+            Debug.Log("creating asset");
+            saver = new WindowEditorNodeSaver();
+            saver.name = saverName;
+            saver.assetAmount = 0;
+            saver.nodes = new List<BaseNode>();
+            AssetDatabase.CreateAsset(saver, pathName);
+        }
+    }
     [MenuItem("Window/Node Editor")]
     static void ShowEditor()
     {
-        NodeEditor editor = EditorWindow.GetWindow<NodeEditor>();
+        editor = EditorWindow.GetWindow<NodeEditor>();
     }
     void OnGUI()
     {
@@ -48,6 +71,8 @@ public class NodeEditor : EditorWindow {
                 {
                     GenericMenu menu = new GenericMenu();
                     menu.AddItem(new GUIContent("Make Transition"), false, ContextCallback, "makeTransition");
+                    if(tempSelectedNode.GetType() == typeof(NoiseNode))
+                        menu.AddItem(new GUIContent("Call Method"), false, ContextCallback, "callMethod");
                     menu.AddSeparator("");
                     menu.AddItem(new GUIContent("Delete Node"), false, ContextCallback, "deleteNode");
                     menu.ShowAsContext();
@@ -108,7 +133,7 @@ public class NodeEditor : EditorWindow {
         if(makeTransitionMode && selectedNode != null)
         {
             Rect mouseRect = new Rect(mousePos.x, mousePos.y, 10, 10);
-            DrawNodeCurve(selectedNode.windowRect, mouseRect);
+            DrawNodeCurve(selectedNode.outputRect, mouseRect);
             Repaint();
         }
         foreach(BaseNode n in nodes)
@@ -136,7 +161,15 @@ public class NodeEditor : EditorWindow {
         {
             NoiseNode noiseNode = new NoiseNode();
             noiseNode.windowRect = new Rect(mousePos, new Vector2(200, 150));
+            //noiseNode.myComputeTextureCreator = computeTextureCreator;
             nodes.Add(noiseNode);
+            Debug.Log("adding asset");
+            noiseNode.name = "zzz" + noiseNode.name + saver.assetAmount.ToString();
+            saver.assetAmount += 1;
+            saver.nodes.Add(noiseNode);
+            AssetDatabase.AddObjectToAsset(noiseNode, pathName);
+            AssetDatabase.SaveAssets();
+            //AssetDatabase.ImportAsset(pathName);
         }
         else if (clb.Equals("outputNode"))
         {
@@ -163,6 +196,18 @@ public class NodeEditor : EditorWindow {
                 selectedNode = tempSelectedNode;
                 makeTransitionMode = true;
             }
+            AssetDatabase.SaveAssets();
+        }
+        else if (clb.Equals("callMethod"))
+        {
+            foreach (BaseNode node in nodes)
+            {
+                if (node.windowRect.Contains(mousePos))
+                {
+                    ((NoiseNode)(node)).TheMethod(0);
+                    break;
+                }
+            }
         }
         else if (clb.Equals("deleteNode"))
         {
@@ -181,10 +226,14 @@ public class NodeEditor : EditorWindow {
             if (clickedOnWindow)
             {
                 nodes.Remove(tempSelectedNode);
+                
                 foreach (BaseNode node in nodes)
                 {
                     node.NodeDeleted(tempSelectedNode);
                 }
+                DestroyImmediate(tempSelectedNode, true);
+                AssetDatabase.SaveAssets();
+                //AssetDatabase.ImportAsset(pathName);
             }
         }
     }
@@ -200,5 +249,13 @@ public class NodeEditor : EditorWindow {
             Handles.DrawBezier(startPos, endPos, startTan, endTan, shadowCol, null, (i + 1) * 5);
         }
         Handles.DrawBezier(startPos, endPos, startTan, endTan, Color.black, null, 1);
+    }
+    void OnDestroy()
+    {
+        AssetDatabase.SaveAssets();
+    }
+    void OnDisable()
+    {
+        AssetDatabase.SaveAssets();
     }
 }

@@ -14,6 +14,7 @@ public class OutputNode : BaseNode {
     private float[] maxVal;
     private string[] variableNames = new string[] {"strength", "offsetX", "offsetY", "octaves","lacunarity","persistence","weight"};
     private bool extendedOptions = false;
+    private bool dampening;
     List<Rect> things;
     Rect[] things2;
 
@@ -46,6 +47,7 @@ public class OutputNode : BaseNode {
             //input1Title = inputNode.GetResult();
         }
         extendedOptions = GUILayout.Toggle(extendedOptions,"Extended Options");
+        dampening = GUILayout.Toggle(dampening, "Dampening");
         /*string lengthText = GUILayout.TextField((_isLengthMinus ? "" : "") + Length.ToString() + (_isLengthDecimal ? "." : ""));
         _isLengthDecimal = lengthText.EndsWith(".");
         _isLengthMinus = lengthText[0].Equals('-');
@@ -55,6 +57,7 @@ public class OutputNode : BaseNode {
         {
             Length = newLength;
         }*/
+
         if (extendedOptions)
         {
             windowRect = new Rect(windowRect.x, windowRect.y, 200, 500);
@@ -127,6 +130,7 @@ public class OutputNode : BaseNode {
                 if (node.Equals(n))
                 {
                     inputNodes[i].Remove((BaseInputNode)node);
+                    break;
                 }
             }
         }
