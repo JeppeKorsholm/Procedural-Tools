@@ -3,17 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System;
+using System.Linq;
 
+[Serializable]
 public class NodeEditor : EditorWindow {
-    
+
+    [SerializeField]
     private List<BaseNode> nodes = new List<BaseNode>();
     private WindowEditorNodeSaver saver;
     private Vector2 mousePos;
     private BaseNode selectedNode;
     private bool makeTransitionMode = false;
-    static NodeEditor editor;
+    public static NodeEditor editor;
     private string saverName = "aaaNoise";
     private string pathName = "Assets/NoiseAssets/";
+
+    public List<BaseNode> GetNodes() { return nodes; }
+    public void SetNodes(List<BaseNode> other) { nodes = other; }
     void Awake()
     {
         pathName = pathName + saverName + ".asset";
@@ -41,6 +47,10 @@ public class NodeEditor : EditorWindow {
     }
     void OnGUI()
     {
+        if(editor == null)
+        {
+            editor = EditorWindow.GetWindow<NodeEditor>();
+        }
         Event e = Event.current;
         mousePos = e.mousePosition;
         if (e.button == 1 && !makeTransitionMode)
@@ -64,6 +74,7 @@ public class NodeEditor : EditorWindow {
                     GenericMenu menu = new GenericMenu();
                     menu.AddItem(new GUIContent("Add Noise Node"), false, ContextCallback, "noiseNode");
                     menu.AddItem(new GUIContent("Add Output Node"), false, ContextCallback, "outputNode");
+                    menu.AddItem(new GUIContent("Add Calculation Node"), false, ContextCallback, "calculationNode");
                     menu.ShowAsContext();
                     e.Use();
                 }
@@ -163,13 +174,24 @@ public class NodeEditor : EditorWindow {
             noiseNode.windowRect = new Rect(mousePos, new Vector2(200, 150));
             //noiseNode.myComputeTextureCreator = computeTextureCreator;
             nodes.Add(noiseNode);
-            Debug.Log("adding asset");
             noiseNode.name = "zzz" + noiseNode.name + saver.assetAmount.ToString();
+            noiseNode.index = nodes.Count - 1;
             saver.assetAmount += 1;
             saver.nodes.Add(noiseNode);
             AssetDatabase.AddObjectToAsset(noiseNode, pathName);
             AssetDatabase.SaveAssets();
             //AssetDatabase.ImportAsset(pathName);
+        }
+        else if (clb.Equals("calculationNode"))
+        {
+            CalculationNode noiseNode = new CalculationNode();
+            noiseNode.windowRect = new Rect(mousePos, new Vector2(200, 150));
+            nodes.Add(noiseNode);
+            noiseNode.name = "zzz" + noiseNode.name + saver.assetAmount.ToString();
+            saver.assetAmount += 1;
+            saver.nodes.Add(noiseNode);
+            AssetDatabase.AddObjectToAsset(noiseNode, pathName);
+            AssetDatabase.SaveAssets();
         }
         else if (clb.Equals("outputNode"))
         {
@@ -213,11 +235,12 @@ public class NodeEditor : EditorWindow {
         {
             bool clickedOnWindow = false;
             BaseNode tempSelectedNode = null;
-
+            int index = 0;
             foreach (BaseNode node in nodes)
             {
                 if (node.windowRect.Contains(mousePos))
                 {
+                    index = nodes.IndexOf(node);
                     tempSelectedNode = node;
                     clickedOnWindow = true;
                     break;
@@ -225,11 +248,15 @@ public class NodeEditor : EditorWindow {
             }
             if (clickedOnWindow)
             {
+                //nodes = nodes.Where(x => x.index != index).ToList();
+                //nodes.Remove(tempSelectedNode);
                 nodes.Remove(tempSelectedNode);
-                
+                saver.nodes.Remove(tempSelectedNode);
+                //nodes.RemoveAt(index);
                 foreach (BaseNode node in nodes)
                 {
                     node.NodeDeleted(tempSelectedNode);
+                    //node.NodeDeleted(index);
                 }
                 DestroyImmediate(tempSelectedNode, true);
                 AssetDatabase.SaveAssets();

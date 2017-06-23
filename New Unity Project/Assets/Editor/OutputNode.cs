@@ -135,6 +135,20 @@ public class OutputNode : BaseNode {
             }
         }
     }
+    /*public override void NodeDeleted(int node)
+    {
+        for (int i = 0; i < inputNodeRects.Length; i++)
+        {
+            /*foreach (int n in inputNodes[i])
+            {
+                if (node.Equals(n))
+                {
+                    inputNodes[i].Remove(n);
+                    break;
+                }
+            }
+        }
+    }*/
     public override BaseInputNode ClickedOnInput(Vector2 pos)
     {
         BaseInputNode retVal = null;
