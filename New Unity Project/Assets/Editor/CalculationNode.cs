@@ -11,8 +11,15 @@ public class CalculationNode : BaseInputNode {
         Subtraction,
         Division,
         Multiplication,
-        Clamp
+        Clamp,
+        SingleNumber
     }
+    public enum InputType
+    {
+        Node,
+        Number
+    }
+    [SerializeField]
     CalcType calcType = new CalcType();
     CalcType pastCalcType = new CalcType();
     private float[][] output;
@@ -21,11 +28,15 @@ public class CalculationNode : BaseInputNode {
 
     string result = "";
     public string[] variableNames = new string[] {"Var 0","Var 1"};
+    [SerializeField]
     List<BaseInputNode> inputNodes = new List<BaseInputNode>();
+    float[] inputNumbers = new float[] { 0, 0, 0 };
     private Rect[] inputNodeRects;
     public float[] viewArray11;
     public float[] viewArray21;
     public float[] viewArray31;
+
+    bool calculateOutput;
     
     public CalculationNode()
     {
@@ -36,14 +47,13 @@ public class CalculationNode : BaseInputNode {
         {
             inputNodes.Add(null);
         }
-        scale = ReScaleAmount(new Vector2(-2, 1), new Vector2(0, 1));
+        
     }
     public float[][] CalculateOutput()
     {
         output = new float[0][];
         if (HasInputs())
         {
-            Debug.Log("Calulating output");
             switch (calcType)
             {
                 case CalcType.Adition:
@@ -65,7 +75,9 @@ public class CalculationNode : BaseInputNode {
                 viewArray21 = output[1];
                 viewArray31 = output[2];
             }
+            outputIsCalculated = true;
         }
+        
         return output;
     }
     public override void DrawWindow()
@@ -73,19 +85,9 @@ public class CalculationNode : BaseInputNode {
         base.DrawWindow();
         Event e = Event.current;
         EditorGUI.BeginChangeCheck();
-
         calcType = (CalcType)EditorGUILayout.EnumPopup("Calculation Type : ", calcType);
         resolution = EditorGUILayout.Vector2Field("Resolution", resolution);
-        if (EditorGUI.EndChangeCheck())
-        {
-            output = CalculateOutput();
-        }
-        EditorGUI.BeginChangeCheck();
-        if (resolution.x != pastRes.x || resolution.y != pastRes.y)
-        {
-            //createArray(out output, (int)resolution.x, (int)resolution.y, 2.34f);
-        }
-        pastRes = resolution;
+
 
         for (int i = 0; i < variableNames.Length; i++)
         {
@@ -105,7 +107,14 @@ public class CalculationNode : BaseInputNode {
         }
         if (EditorGUI.EndChangeCheck())
         {
+            outputIsCalculated = false;
+            iHaveBeenRecalculated();
             EditorUtility.SetDirty(this);
+        }
+        calculateOutput = GUILayout.Button("Calculate Output");
+        if(!outputIsCalculated && calculateOutput)
+        {
+            output =  CalculateOutput();
         }
     }
     public override void DrawCurves()
@@ -132,6 +141,7 @@ public class CalculationNode : BaseInputNode {
             {
                 inputNodes[i] = null;
                 variableNames[i] = "Var " + i;
+                outputIsCalculated = false;
                 break;
             }
             
@@ -141,6 +151,7 @@ public class CalculationNode : BaseInputNode {
             if (node.Equals(n))
             {
                 outputNodes.Remove(n);
+                
                 break;
             }
         }
@@ -172,6 +183,8 @@ public class CalculationNode : BaseInputNode {
                 retVal = (BaseInputNode)inputNodes[i];
                 inputNodes[i] = null;
                 variableNames[i] = "Var " + i;
+                outputIsCalculated = false;
+                iHaveBeenRecalculated();
             }
         }
         return retVal;
@@ -204,13 +217,15 @@ public class CalculationNode : BaseInputNode {
                         viewArray21 = output[1];
                         viewArray31 = output[2];
                     }
+                    outputIsCalculated = false;
+                    iHaveBeenRecalculated();
                 }
                 else { EditorUtility.DisplayDialog("Infinite Loop Error", "An infinite loop would be created by making that connection", "Okay"); }
             }
         }
         AssetDatabase.SaveAssets();
     }
-    bool HasInputs()
+    public override bool HasInputs()
     {
         for (int i = 0; i < inputNodes.Count; i++)
         {
@@ -256,6 +271,35 @@ public class CalculationNode : BaseInputNode {
 
     public override float[][] GiveOutput()
     {
-        return output;
+        if (HasInputs())
+        {
+            if (!outputIsCalculated)
+            {
+                output = CalculateOutput();
+            }
+            return output;
+        }
+        else
+            foreach (BaseInputNode n in inputNodes)
+            {
+                if (n != null)
+                {
+                    return n.GiveOutput();
+                }
+            }
+        return null;
+    }
+    void createArray(out float[][] array, int width, int depth, float val)
+    {
+        float[][] temp = new float[width][];
+        for (int x = 0; x < width; x++)
+        {
+            temp[x] = new float[depth];
+            for (int y = 0; y < depth; y++)
+            {
+                temp[x][y] = val;
+            }
+        }
+        array = temp;
     }
 }

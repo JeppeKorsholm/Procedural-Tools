@@ -12,7 +12,7 @@ public class ListWrapper
 public class NoiseNode : BaseInputNode
 {
     [SerializeField]
-    private NoiseType noiseType;
+    private NoiseTypes noiseType;
     public enum NoiseType
     {
         WhiteNoise,
@@ -31,15 +31,21 @@ public class NoiseNode : BaseInputNode
     private float[] hSliderVal;
     [SerializeField]
     private float[] minVal;
+    private float[] minMinVal;
     [SerializeField]
     private float[] maxVal;
-    private string[] variableNames = new string[] { "strength", "offsetX", "offsetY", "octaves", "lacunarity", "persistence", "weight" };
+
+    private float minScale;
+    private float maxScale;
+    private string[] variableNames = new string[] { "strength", "offsetX", "offsetY","frequency", "octaves", "lacunarity", "persistence", "weight" };
     [SerializeField]
     public bool extendedOptions;
     [SerializeField]
     public bool advancedOptions;
     public bool dampening;
     public bool things;
+
+    
 
     public float Length;
     bool _isLengthDecimal;
@@ -58,26 +64,28 @@ public class NoiseNode : BaseInputNode
         windowTitle = "Noise Node";
         buttonAmount = variableNames.Length + 1;
         inputNodeRects = new Rect[buttonAmount];
-        hSliderVal = new float[buttonAmount];
+        hSliderVal = new float[variableNames.Length];
         minVal = new float[buttonAmount];
         maxVal = new float[buttonAmount];
         resolution = new Vector2(256, 256);
-        createArray(out output, (int)resolution.x, (int)resolution.y, 2,true);
 
-        createArray(out testArray, 64, 64, 1, false);
-
-        testArray = CombineArrays(testArray, output, true);
-        viewArray1 = testArray[0];
-        viewArray2 = testArray[1];
-        viewArray3 = testArray[2];
-
+        minMinVal = new float[] { 0, 0, 0, 1, 1, 0, 0, 0 };
+        minVal = new float[] { 0, 0, 0, 1, 1, 1, 0, 0 };
+        maxVal = new float[] { 1, 10, 10, 20, 8, 4, 4, 1 };
+        minScale = 0;
+        maxScale = 1;
         output = testArray;
         for (int i = 0; i < inputNodeRects.Length; i++)
         {
             //inputNodes.Add(new List<BaseInputNode>());
             inputNodes.Add(new ListWrapper());
-            minVal[i] = 0;
-            maxVal[i] = 10;
+            
+            //minVal[i] = 0;
+            //maxVal[i] = 10;
+        }
+        for(int i = 0; i < hSliderVal.Length; i++)
+        {
+            hSliderVal[i] = maxVal[i] / 2;
         }
     }
     public Vector2 pastRes;
@@ -87,11 +95,27 @@ public class NoiseNode : BaseInputNode
         Event e = Event.current;
         EditorGUI.BeginChangeCheck();
         
-        noiseType = (NoiseType)EditorGUILayout.EnumPopup("Noise Type : ", noiseType);
+        noiseType = (NoiseTypes)EditorGUILayout.EnumPopup("Noise Type : ", noiseType);
         resolution = EditorGUILayout.Vector2Field("Resolution", resolution);
-        if(resolution.x != pastRes.x || resolution.y != pastRes.y)
-            createArray(out output, (int)resolution.x, (int)resolution.y, 1, false);
-        pastRes = resolution;
+        scale = EditorGUILayout.Vector2Field("Scale", scale);
+        if (advancedOptions)
+        {
+            if (extendedOptions)
+            {
+                GUILayout.BeginHorizontal();
+                minScale = (EditorGUILayout.FloatField(minScale, GUILayout.Width(40)));
+                EditorGUILayout.MinMaxSlider(ref scale.x, ref scale.y, minScale, maxScale, GUILayout.Width(100));
+                maxScale = (EditorGUILayout.FloatField(maxScale, GUILayout.Width(40)));
+                GUILayout.EndHorizontal();
+            }
+            else
+            {
+                EditorGUILayout.MinMaxSlider(ref scale.x, ref scale.y, minScale, maxScale);
+            }
+        }
+        //if (scale.x >= scale.y - 0.1) scale.x = scale.y - 0.1f;
+        if (scale.x < minScale) scale.x = minScale;
+        if (scale.y < minScale) scale.y = minScale + 0.1f;
         if (inputNodes.Count > 0)
         {
             //input1Title = inputNode.GetResult();
@@ -113,7 +137,7 @@ public class NoiseNode : BaseInputNode
 
             if (extendedOptions)
             {
-                windowRect = new Rect(windowRect.x, windowRect.y, 200, 600);
+                windowRect = new Rect(windowRect.x, windowRect.y, 200, 700);
                 for (int i = 0; i < variableNames.Length; i++)
                 {
                     GUILayout.Label(variableNames[i]);
@@ -134,11 +158,12 @@ public class NoiseNode : BaseInputNode
                     GUILayout.EndHorizontal();
                     if (hSliderVal[i] < minVal[i]) hSliderVal[i] = minVal[i];
                     else if (hSliderVal[i] > maxVal[i]) hSliderVal[i] = maxVal[i];
+                    if (minVal[i] < minMinVal[i]) minVal[i] = minMinVal[i];
                 }
             }
             else
             {
-                windowRect = new Rect(windowRect.x, windowRect.y, 200, 430);
+                windowRect = new Rect(windowRect.x, windowRect.y, 200, 550);
                 //Debug.Log(variableNames.Length);
                 //Debug.Log(inputNodeRects.Length);
                 for (int i = 0; i < variableNames.Length; i++)
@@ -150,14 +175,14 @@ public class NoiseNode : BaseInputNode
                     }
                     GUILayout.BeginHorizontal();
                     hSliderVal[i] = GUILayout.HorizontalSlider(hSliderVal[i], minVal[i], maxVal[i], GUILayout.Width(100));
-                    float.TryParse(GUILayout.TextField(hSliderVal[i].ToString(), GUILayout.Width(50)), out hSliderVal[i]);
+                    hSliderVal[i] = EditorGUILayout.FloatField(hSliderVal[i], GUILayout.Width(50));
                     GUILayout.EndHorizontal();
                     if (hSliderVal[i] < minVal[i]) hSliderVal[i] = minVal[i];
                     else if (hSliderVal[i] > maxVal[i]) hSliderVal[i] = maxVal[i];
                 }
             }
         }
-        else windowRect = new Rect(windowRect.x, windowRect.y, 200, 150);
+        else windowRect = new Rect(windowRect.x, windowRect.y, 200, 200);
         GUILayout.Label("Result : " + result);
         if (e.type == EventType.Repaint)
         {
@@ -167,9 +192,12 @@ public class NoiseNode : BaseInputNode
         }
         if (EditorGUI.EndChangeCheck())
         {
+            outputIsCalculated = false;
+            iHaveBeenRecalculated();
             EditorUtility.SetDirty(this);
         }
     }
+    
     public override void DrawCurves()
     {
         for (int i = 0; i < inputNodeRects.Length; i++)
@@ -243,6 +271,8 @@ public class NoiseNode : BaseInputNode
                 if (node.Equals(n))
                 {
                     inputNodes[i].nodes.Remove((BaseInputNode)node);
+                    outputIsCalculated = false;
+                    iHaveBeenRecalculated();
                     break;
                 }
             }
@@ -282,6 +312,8 @@ public class NoiseNode : BaseInputNode
                 inputNodes[i] = new List<BaseInputNode>();*/
                 retVal = (BaseInputNode) inputNodes[i].nodes[0];
                 inputNodes[i].nodes = new List<BaseNode>();
+                outputIsCalculated = false;
+                iHaveBeenRecalculated();
             }
         }
         return retVal;
@@ -306,6 +338,8 @@ public class NoiseNode : BaseInputNode
                     inputNodes[i].nodes.Add(input);
                     if(!input.outputNodes.Contains(this))
                         input.outputNodes.Add(this);
+                    outputIsCalculated = false;
+                    iHaveBeenRecalculated();
                 }
                 else { EditorUtility.DisplayDialog("Infinite Loop Error", "An infinite loop would be created by making that connection", "Okay"); }
             }
@@ -317,17 +351,18 @@ public class NoiseNode : BaseInputNode
         Debug.Log(windowTitle + " " +iteration);
         if (HasInputs())
         {
-            /*foreach (List<BaseInputNode> node in inputNodes)
+            foreach (ListWrapper node in inputNodes)
             {
-                foreach (BaseInputNode n in node)
+                foreach (BaseInputNode n in node.nodes)
                 {
+                    if(n.GetType() == typeof(NoiseNode))
                     return ((NoiseNode)n).TheMethod(iteration + 1);
                 }
-            }*/
+            }
         }
         return new List<int>();
     }
-    bool HasInputs()
+    public override bool HasInputs()
     {
         foreach(ListWrapper n in inputNodes)
         {
@@ -373,10 +408,41 @@ public class NoiseNode : BaseInputNode
 
     public override float[][] GiveOutput()
     {
-        viewArray1 = output[0];
-        viewArray2 = output[1];
-        viewArray3 = output[2];
-        return output;
+        if (!outputIsCalculated || output == null)
+        {
+            Vector2 tempRes = resolution;
+            if (tempRes.x < 8) tempRes.x = 8;
+            if (tempRes.y < 8) tempRes.y = 8;
+            Debug.Log("Calculating output");
+            NoiseSettings tempSettings = new NoiseSettings();
+
+            tempSettings.strength = hSliderVal[0];
+            tempSettings.noiseType = noiseType;
+            tempSettings.frequency = hSliderVal[3];
+            tempSettings.octaves = (int)hSliderVal[4];
+            tempSettings.lacunarity = hSliderVal[5];
+            tempSettings.persistence = hSliderVal[6];
+            tempSettings.weight = hSliderVal[7];
+            tempSettings.damping = dampening;
+            output = EditorComputeTextureCreator.textureCreator.GenerateNoise(tempSettings, tempRes);
+            outputIsCalculated = true;
+            if(output.Length > (int)resolution.x || output[0].Length > (int)resolution.y)
+            {
+                output = CombineArrays(output, resolution, true);
+            }
+            viewArray1 = output[0];
+            viewArray2 = output[1];
+            viewArray3 = output[2];
+            return output;
+        }
+        else
+        {
+            Debug.Log("Giving output");
+            viewArray1 = output[0];
+            viewArray2 = output[1];
+            viewArray3 = output[2];
+            return output;
+        }
     }
     public override float[] GiveOutput(Vector2 res)
     {

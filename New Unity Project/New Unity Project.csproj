@@ -89,6 +89,7 @@
     <Compile Include="Assets\HouseGenerator\Roof.cs" />
     <Compile Include="Assets\HouseGenerator\Walls.cs" />
     <Compile Include="Assets\Noise\ComputeTextureCreator.cs" />
+    <Compile Include="Assets\Noise\EditorComputeTextureCreator.cs" />
     <Compile Include="Assets\Noise\Noise.cs" />
     <Compile Include="Assets\Noise\ProceduralCubes.cs" />
     <Compile Include="Assets\Noise\TextureCreator.cs" />

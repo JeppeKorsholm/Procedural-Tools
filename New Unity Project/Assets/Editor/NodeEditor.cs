@@ -17,7 +17,8 @@ public class NodeEditor : EditorWindow {
     public static NodeEditor editor;
     private string saverName = "aaaNoise";
     private string pathName = "Assets/NoiseAssets/";
-
+    [SerializeField]
+    public EditorComputeTextureCreator myComputeTextureCreator;
     public List<BaseNode> GetNodes() { return nodes; }
     public void SetNodes(List<BaseNode> other) { nodes = other; }
     void Awake()
@@ -28,6 +29,7 @@ public class NodeEditor : EditorWindow {
             Debug.Log("loading asset");
             saver = (WindowEditorNodeSaver)AssetDatabase.LoadAssetAtPath(pathName, typeof(WindowEditorNodeSaver));
             nodes = saver.nodes;
+            myComputeTextureCreator = saver.myComputeTextureCreator;
         }
         catch { }
         if (!saver)
@@ -37,6 +39,7 @@ public class NodeEditor : EditorWindow {
             saver.name = saverName;
             saver.assetAmount = 0;
             saver.nodes = new List<BaseNode>();
+            
             AssetDatabase.CreateAsset(saver, pathName);
         }
     }
@@ -81,7 +84,8 @@ public class NodeEditor : EditorWindow {
                 else
                 {
                     GenericMenu menu = new GenericMenu();
-                    menu.AddItem(new GUIContent("Make Transition"), false, ContextCallback, "makeTransition");
+                    if (tempSelectedNode.GetType() != typeof(OutputNode))
+                        menu.AddItem(new GUIContent("Make Transition"), false, ContextCallback, "makeTransition");
                     if(tempSelectedNode.GetType() == typeof(NoiseNode))
                         menu.AddItem(new GUIContent("Call Method"), false, ContextCallback, "callMethod");
                     menu.AddSeparator("");
@@ -198,6 +202,11 @@ public class NodeEditor : EditorWindow {
             OutputNode noiseNode = new OutputNode();
             noiseNode.windowRect = new Rect(mousePos, new Vector2(200, 200));
             nodes.Add(noiseNode);
+            noiseNode.name = "zzz" + noiseNode.name + saver.assetAmount.ToString();
+            saver.assetAmount += 1;
+            saver.nodes.Add(noiseNode);
+            AssetDatabase.AddObjectToAsset(noiseNode, pathName);
+            AssetDatabase.SaveAssets();
         }
         else if (clb.Equals("makeTransition"))
         {
@@ -217,6 +226,7 @@ public class NodeEditor : EditorWindow {
             {
                 selectedNode = tempSelectedNode;
                 makeTransitionMode = true;
+                
             }
             AssetDatabase.SaveAssets();
         }

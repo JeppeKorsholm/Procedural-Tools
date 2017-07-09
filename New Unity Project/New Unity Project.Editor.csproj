@@ -131,6 +131,7 @@
     <Compile Include="Assets\Editor\CalculationNode.cs" />
     <Compile Include="Assets\Editor\EditorOpenerInspector.cs" />
     <Compile Include="Assets\Editor\NodeEditor.cs" />
+    <Compile Include="Assets\Editor\NoiseCurveWindow.cs" />
     <Compile Include="Assets\Editor\NoiseNode.cs" />
     <Compile Include="Assets\Editor\OutputNode.cs" />
     <Compile Include="Assets\Editor\TextureCreatorInspector.cs" />

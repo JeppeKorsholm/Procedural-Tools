@@ -688,24 +688,24 @@ float3 Sum(float2 Point, NoiseInfo inf)
     float2x2 m = float2x2(1, 0,
                           0, 1);
 
-    float3 sum = float3(0, 0, 0); //PerlinNoise(Point, inf.frequency);
+    float3 sum = PerlinNoise(Point, inf.frequency); //float3(0, 0, 0); //PerlinNoise(Point, inf.frequency);
     float range = 1;
     float tempfrequency = inf.frequency;
     float tempOctaves = inf.octaves;
-    float2 derivativeSum = float2(0, 0);
+    float2 derivativeSum = sum.xy; //float2(0, 0);
     //normalize(mul(m, (sum.yz)));
 
     uint val = min(tempOctaves, 8);
     for (uint o = 1; o < val; o++)
     {
-        float3 noise = PerlinNoise(Point, tempfrequency);
-        float2 derivative = noise.yz;
-        derivativeSum += derivative;
-      
-        sum += (noise.x * inf.amplitude);
         tempfrequency *= inf.lacunarity; /// (1 - dot(derivative, derivative));
         inf.amplitude *= inf.persistence;
         range = (range + inf.amplitude); /// (1 - dot(derivativeSum, derivativeSum));
+
+        float3 noise = PerlinNoise(Point, tempfrequency);
+        float2 derivative = noise.yz;
+        derivativeSum += derivative;
+        sum = sum + (noise.x)* inf.amplitude;
 
     }
     return float3(sum.x * (1.0 / range), derivativeSum * (1.0 / range));
@@ -781,28 +781,27 @@ void CSSecond(uint2 id : SV_DispatchThreadID)
     half3 Vector3point = lerp(point0, point1, (id.x) / (float) yWidth);
 	// TODO: insert actual code here!
 	//Result[id.xy] = float4(((id.x) / (float) id.y), ((id.y)/ (float) id.x), 0, 1);
-    float4 noisefloat = float4(1, 1, 1, 1);
+    float4 noisefloat = float4(0, 0, 0, 0);
 	//Shows UVs Tiled
     uint numStructs;
     uint stride;
     float2 p = Vector3point.xy;
     noiseInfoBuffer.GetDimensions(numStructs, stride);
     const float2x2 m = float2x2(0.8, -0.6, 0.6, 0.8);
-    for (uint i = 0; i < numStructs; i++)
-    {
-        switch (noiseInfoBuffer[i].noiseType)
+   
+        switch (noiseInfoBuffer[0].noiseType)
         {
             case 0:
-                noisefloat += (Sum(p, noiseInfoBuffer[i]).x * 0.5 + 0.5) * (noiseInfoBuffer[i].weight);
+                noisefloat += (Sum(p, noiseInfoBuffer[0]).x);
                 break;
             case 1:
-                noisefloat += (abs(Sum(p, noiseInfoBuffer[i]).x * 0.5 + 0.5) * (noiseInfoBuffer[i].weight));
+                noisefloat += (abs(Sum(p, noiseInfoBuffer[0]).x));
                 break;
             case 2:
-                noisefloat += (1 - ((abs(Sum(p, noiseInfoBuffer[i]).x) * 0.5 + 0.5))) * (noiseInfoBuffer[i].weight);
+                noisefloat += (1 - ((abs(Sum(p, noiseInfoBuffer[0]).x) * 0.5 + 0.5)));
                 break;
             case 3:
-                noisefloat += (Pattern(p, noiseInfoBuffer[i]).x * 0.5 + 0.5) * (noiseInfoBuffer[i].weight);
+                noisefloat += (Pattern(p, noiseInfoBuffer[0]).x * 0.5 + 0.5);
                 break;
             case 4:
                 //float a = 0.0;
@@ -811,7 +810,7 @@ void CSSecond(uint2 id : SV_DispatchThreadID)
                 
                 for (int j = 0; j < 15; j++)
                 {
-                    float3 n = Sum(p, noiseInfoBuffer[i]);
+                    float3 n = Sum(p, noiseInfoBuffer[0]);
                     d += n.yz;
                     noisefloat += b * n.x / (1.0 + dot(d, d));
                     b *= 0.5;
@@ -819,7 +818,7 @@ void CSSecond(uint2 id : SV_DispatchThreadID)
                 }
                 noisefloat = noisefloat * 0.5 + 0.5; //* noiseInfoBuffer[i].weight); //((noise.x / ((1 - Dot(deriv.xy, deriv.x, deriv.y) * 0.5f)) * (noiseInfoBuffer[i].weight)));
                 break;
-        }
+        
         p += noisefloat;
     }
 
@@ -835,5 +834,5 @@ void CSSecond(uint2 id : SV_DispatchThreadID)
 
     //SecondResult[id.xy] = 1 * noisefloat / numStructs;
 
-    SecondResult[(id.x) + xWidth * id.y] = noisefloat / numStructs;
+    SecondResult[(id.x) + xWidth * id.y] = noisefloat; /// numStructs;
 }
