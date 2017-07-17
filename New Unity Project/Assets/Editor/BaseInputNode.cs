@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 public class FloatArray2D
 {
     public float[][] array;
@@ -49,13 +50,25 @@ public class FloatArray2D
 
 public class BaseInputNode : BaseNode {
     public Vector2 resolution;
-    public List<BaseNode> outputNodes = new List<BaseNode>();
+    public List<BaseNode> outputNodes;
     public Vector2 scale;
     public bool outputIsCalculated;
+    public EditorComputeTextureCreator textureCreator;
+    float[][] output;
     public BaseInputNode()
     {
+        outputNodes = new List<BaseNode>();
         hasInput = true;
         scale = new Vector2(0, 1);
+    }
+    public override void DrawWindow()
+    {
+        
+        base.DrawWindow();
+        if (textureCreator == null)
+        {
+            textureCreator = EditorComputeTextureCreator.textureCreator;
+        }
     }
     public override void DrawCurves()
     {
@@ -97,11 +110,11 @@ public class BaseInputNode : BaseNode {
                         float end = (x + 1) * jumpX;
                         float endFrac = end - (int)end;
                         float divVal = 0;
-                        xVal = startFrac * inputFormat[(int)start][(int)(y*jumpY)];
+                        xVal = startFrac * inputFormat[(int)start][(int)(y)];
                         divVal += startFrac;
                         if (end < inputFormat.Length - 1)
                         {
-                            xVal += endFrac * inputFormat[(int)end][(int)(y * jumpY)];
+                            xVal += endFrac * inputFormat[(int)end][(int)(y)];
                             divVal += endFrac;
                         }
                         else
@@ -111,7 +124,7 @@ public class BaseInputNode : BaseNode {
                         }
                         for (int i = Mathf.RoundToInt(start + startFrac); i < (int)end; i++)
                         {
-                            xVal += inputFormat[i][(int)(y * jumpY)];
+                            xVal += inputFormat[i][(int)(y)];
                             divVal += 1;
                         }
                         xVal /= divVal;
@@ -127,7 +140,6 @@ public class BaseInputNode : BaseNode {
                             xVal = inputFormat[inputFormat.Length - 1][(int)(y)];
                     }
                     float fracX = ((float)x * jumpX - (int)((float)x * jumpX));
-                    float fracY = ((float)y * jumpY - (int)((float)y * jumpY));
                     if(fracX != 0f)
                         //output[x][y] = (xVal*fracX + yVal*fracY)/(fracX+fracY);
                         xOutput[x][y] = (xVal);
@@ -304,8 +316,8 @@ public class BaseInputNode : BaseNode {
                 output[x][y] = 0;
             }
         }
-        float jumpX = (float)inputFormat.Length / (float)outputFormat.x;
-        float jumpY = (float)inputFormat[0].Length / (float)outputFormat.y;
+        float jumpX = (float)inputFormat.Length / (int)outputFormat.x;
+        float jumpY = (float)inputFormat[0].Length / (int)outputFormat.y;
         if (!interpolate)
         {
             for (int x = 0; x < output.Length; x++)
@@ -320,10 +332,10 @@ public class BaseInputNode : BaseNode {
         {
             float[][] xOutput = new float[(int)outputFormat.x][];
 
-            for (int x = 0; x < outputFormat.x; x++)
+            for (int x = 0; x < (int)outputFormat.x; x++)
             {
                 xOutput[x] = new float[inputFormat[0].Length];
-                for (int y = 0; y < xOutput[0].Length; y++)
+                for (int y = 0; y < inputFormat[0].Length; y++)
                 {
                     float xVal = 0.0f;
                     if (jumpX > 1)
@@ -334,11 +346,11 @@ public class BaseInputNode : BaseNode {
                         float end = (x + 1) * jumpX;
                         float endFrac = end - (int)end;
                         float divVal = 0;
-                        xVal = startFrac * inputFormat[(int)start][(int)(y * jumpY)];
+                        xVal = startFrac * inputFormat[(int)start][y];
                         divVal += startFrac;
                         if (end < inputFormat.Length - 1)
                         {
-                            xVal += endFrac * inputFormat[(int)end][(int)(y * jumpY)];
+                            xVal += endFrac * inputFormat[(int)end][y];
                             divVal += endFrac;
                         }
                         else
@@ -348,7 +360,7 @@ public class BaseInputNode : BaseNode {
                         }
                         for (int i = Mathf.RoundToInt(start + startFrac); i < (int)end; i++)
                         {
-                            xVal += inputFormat[i][(int)(y * jumpY)];
+                            xVal += inputFormat[i][y];
                             divVal += 1;
                         }
                         xVal /= divVal;
@@ -374,7 +386,6 @@ public class BaseInputNode : BaseNode {
                     //output[x][y] = xVal;
                 }
             }
-
             int oneDivJumpX = Mathf.RoundToInt(1 / jumpX);
             for (int x = 0; x < output.Length; x++)
             {
@@ -392,7 +403,7 @@ public class BaseInputNode : BaseNode {
                         float divVal = 0;
                         yVal = startFrac * xOutput[(int)(x)][(int)start];
                         divVal += startFrac;
-                        if (end < inputFormat[0].Length - 1)
+                        if ((int)end < xOutput[0].Length - 1)
                         {
                             //yVal += endFrac * inputFormat[(int)(x * jumpX)][(int)end];
                             yVal += endFrac * xOutput[(int)(x)][(int)end];
@@ -400,7 +411,7 @@ public class BaseInputNode : BaseNode {
                         }
                         else
                         {
-                            end = inputFormat[0].Length - 1;
+                            end = xOutput[0].Length - 1;
                             // divVal = end - start;
                         }
                         for (int i = Mathf.RoundToInt(start + startFrac); i <= (int)end; i++)
@@ -430,7 +441,6 @@ public class BaseInputNode : BaseNode {
                 }
             }
         }
-
         return output;
     }
     public float[][] CombineArrays(float[][] Array1, float[][] Array2, float[][] outputFormat, bool interpolate)
@@ -453,21 +463,64 @@ public class BaseInputNode : BaseNode {
         return output;
 
     }
-    public void ReScaleArray(Vector2 oldScale, Vector2 newScale, float[][] array)
+    public float[][] ReScaleArray(Vector2 oldScale, Vector2 newScale, float[][] array)
     {
         Vector2 reScale = ReScaleAmount(oldScale, newScale);
-        foreach (float[] item in array)
+        float[][] output = new float[array.Length][];
+        for (int x = 0; x < array.Length; x++)
         {
-            for (int i = 0; i < item.Length; i++)
+            output[x] = new float[array[0].Length];
+            for (int y = 0; y < array[0].Length; y++)
             {
-                item[i] = item[i] * reScale.x + reScale.y;
+                output[x][y] = array[x][y] * reScale.x + reScale.y;
             }
         }
+        return output;
+    }
+
+    public float[][] ClampArray(Vector2 limits, float[][] array)
+    {
+        float[][] output = new float[array.Length][];
+        for (int x = 0; x < array.Length; x++)
+        {
+            output[x] = new float[array[0].Length];
+            for (int y = 0; y < array[0].Length; y++)
+            {
+                if (array[x][y] < limits.x)
+                    output[x][y] = limits.x;
+                else if (array[x][y] > limits.y)
+                    output[x][y] = limits.y;
+                else
+                    output[x][y] = array[x][y];
+            }
+        }
+        return output;
+    }
+
+    public NoiseSettings[] createNoiseSettingArray(NoiseTypes noiseType, float[][] strength, float[][] frequency, float[][] octaves, float[][] lacunarity, float[][] persistence, float[][] wheight, bool dampening)
+    {
+        NoiseSettings[] output = new NoiseSettings[strength.Length * strength[0].Length];
+        for (int x = 0; x < strength.Length; x++)
+        {
+            for (int y = 0; y < strength[0].Length; y++)
+            {
+                NoiseSettings temp = new NoiseSettings();
+                temp.noiseType = noiseType;
+                temp.strength = strength[x][y];
+                temp.frequency = frequency[x][y];
+                temp.octaves = (int)octaves[x][y];
+                temp.lacunarity = lacunarity[x][y];
+                temp.persistence = persistence[x][y];
+                temp.weight = wheight[x][y];
+                temp.damping = dampening;
+                output[y + x * strength[0].Length] = temp;
+            }
+        }
+        return output;
     }
 
     public virtual void iHaveBeenRecalculated()
     {
-        Debug.Log("ihaveBeenRecalculated " + windowTitle);
         if (outputNodes.Count != 0)
         {
             foreach (BaseInputNode n in outputNodes)
@@ -505,7 +558,7 @@ public class BaseInputNode : BaseNode {
             }
             else
             {
-                float[][] tempB = CombineArrays(b, a, false);
+                float[][] tempB = CombineArrays(b, new Vector2(a.Length,a[0].Length), true);
                 for (int x = 0; x < a.Length; x++)
                 {
                     output[x] = new float[a[0].Length];
@@ -536,7 +589,7 @@ public class BaseInputNode : BaseNode {
         }
         else
         {
-            float[][] tempB = CombineArrays(b, a, false);
+            float[][] tempB = CombineArrays(b, new Vector2(a.Length, a[0].Length), true);
             for (int x = 0; x < a.Length; x++)
             {
                 output[x] = new float[a[0].Length];
@@ -567,7 +620,7 @@ public class BaseInputNode : BaseNode {
         }
         else
         {
-            float[][] tempB = CombineArrays(b, a, false);
+            float[][] tempB = CombineArrays(b, new Vector2(a.Length, a[0].Length), true);
             for (int x = 0; x < a.Length; x++)
             {
                 output[x] = new float[a[0].Length];
@@ -606,7 +659,7 @@ public class BaseInputNode : BaseNode {
         }
         else
         {
-            float[][] tempB = CombineArrays(b, a, false);
+            float[][] tempB = CombineArrays(b, new Vector2(a.Length, a[0].Length), true);
             for (int x = 0; x < a.Length; x++)
             {
                 output[x] = new float[a[0].Length];
@@ -752,5 +805,29 @@ public class BaseInputNode : BaseNode {
             }
         }
         return output;
+    }
+
+    public virtual Vector2 GetScale(float[][] array)
+    {
+        Vector2 output = new Vector2(array[0][0], array[0][0]);
+        foreach (float[] array1 in array)
+        {
+            foreach (float n in array1)
+            {
+                if (n > output.y) output.y = n;
+                if (n < output.x) output.x = n;
+            }
+        }
+        return output;
+    }
+    void OnDestroy()
+    {
+        outputIsCalculated = false;
+        AssetDatabase.SaveAssets();
+    }
+    void OnDisable()
+    {
+        outputIsCalculated = false;
+        AssetDatabase.SaveAssets();
     }
 }

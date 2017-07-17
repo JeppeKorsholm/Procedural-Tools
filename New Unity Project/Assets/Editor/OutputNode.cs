@@ -21,6 +21,7 @@ public class OutputNode : BaseInputNode {
     private bool calculateOutput;
     private bool applyToTerrain;
     private bool realTimeTerrain;
+    private bool hasBeenAppliedToTerrain;
     public OutputNode()
     {
         buttonAmount = variableNames.Length;
@@ -36,6 +37,7 @@ public class OutputNode : BaseInputNode {
             minVal[i] = 0;
             maxVal[i] = 10;
         }
+        textureCreator = EditorComputeTextureCreator.textureCreator;
     }
     public override void DrawWindow()
     {
@@ -50,11 +52,12 @@ public class OutputNode : BaseInputNode {
         {
             if (calculateOutput || realTimeCalculations)
             {
+                
                 GiveOutput();
             }
         }
         
-        if((applyToTerrain || realTimeTerrain) && !somethingChanged)
+        if((applyToTerrain || realTimeTerrain) && !somethingChanged && !hasBeenAppliedToTerrain)
         {
             ApplyToTerrain();
         }
@@ -87,6 +90,7 @@ public class OutputNode : BaseInputNode {
         if (node.Equals(inputNodes))
         {
             inputNodes = null;
+            AssetDatabase.SaveAssets();
         }
     }
     public override BaseInputNode ClickedOnInput(Vector2 pos)
@@ -111,6 +115,7 @@ public class OutputNode : BaseInputNode {
                 retVal = inputNodes;
                 inputNodes = null;
                 somethingChanged = true;
+                AssetDatabase.SaveAssets();
             }
         }
         return retVal;
@@ -133,6 +138,8 @@ public class OutputNode : BaseInputNode {
                 if (!input.outputNodes.Contains(this))
                     input.outputNodes.Add(this);
                 somethingChanged = true;
+                iHaveBeenRecalculated();
+                AssetDatabase.SaveAssets();
             }
         }
         
@@ -140,25 +147,43 @@ public class OutputNode : BaseInputNode {
     public override float[][] GiveOutput()
     {
         somethingChanged = false;
-        if(inputNodes != null)
+        hasBeenAppliedToTerrain = false;
+        if (inputNodes != null)
         {
             output = inputNodes.GiveOutput();
         }
         if (output != null)
         {
-            //EditorComputeTextureCreator.textureCreator.output2 = output[0];
+            //EditorComputeTextureCreator.textureCreator.output2 = output[512];
+            //EditorComputeTextureCreator.textureCreator.output3 = output[1];
         }
+        AssetDatabase.SaveAssets();
         return output;
     }
     public override void iHaveBeenRecalculated()
     {
         somethingChanged = true;
+        hasBeenAppliedToTerrain = false;
+        outputIsCalculated = false;
     }
     public void ApplyToTerrain()
     {
         if (output == null)
             GiveOutput();
         if (output != null)
-            EditorComputeTextureCreator.textureCreator.ApplyToTerrain(output);
+        {
+            int heightmapRes = textureCreator.terrain.terrainData.heightmapResolution - 1;
+            if (output.Length != heightmapRes || output[0].Length != heightmapRes)
+            {
+                output = CombineArrays(output, new Vector2(heightmapRes, heightmapRes), true);
+            }
+            textureCreator.ApplyToTerrain(output);
+            hasBeenAppliedToTerrain = true;
+        }
+    }
+    void OnDestroy()
+    {
+        somethingChanged = true;
+        AssetDatabase.SaveAssets();
     }
 }

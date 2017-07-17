@@ -21,12 +21,12 @@ public class NodeEditor : EditorWindow {
     public EditorComputeTextureCreator myComputeTextureCreator;
     public List<BaseNode> GetNodes() { return nodes; }
     public void SetNodes(List<BaseNode> other) { nodes = other; }
+    Vector2 scrollPos;
     void Awake()
     {
         pathName = pathName + saverName + ".asset";
         try
         {
-            Debug.Log("loading asset");
             saver = (WindowEditorNodeSaver)AssetDatabase.LoadAssetAtPath(pathName, typeof(WindowEditorNodeSaver));
             nodes = saver.nodes;
             myComputeTextureCreator = saver.myComputeTextureCreator;
@@ -47,9 +47,11 @@ public class NodeEditor : EditorWindow {
     static void ShowEditor()
     {
         editor = EditorWindow.GetWindow<NodeEditor>();
+        //editor.position = new Rect(new Vector2(0f, 0f), editor.minSize);
     }
     void OnGUI()
     {
+        //scrollPos = EditorGUILayout.BeginScrollView(scrollPos,true, true);
         if(editor == null)
         {
             editor = EditorWindow.GetWindow<NodeEditor>();
@@ -151,16 +153,28 @@ public class NodeEditor : EditorWindow {
             DrawNodeCurve(selectedNode.outputRect, mouseRect);
             Repaint();
         }
+        for(int i = nodes.Count-1; i >= 0; i--)
+        {
+            if(nodes[i] == null)
+            {
+                nodes.Remove(nodes[i]);
+            }
+        }
         foreach(BaseNode n in nodes)
         {
-            n.DrawCurves();
+            if(n != null)
+                n.DrawCurves();
         }
+        scrollPos = EditorGUILayout.BeginScrollView(scrollPos, true, true);
+        
         BeginWindows();
         for(int i = 0; i < nodes.Count; i++)
         {
+            
             nodes[i].windowRect = GUI.Window(i, nodes[i].windowRect, DrawNodeWindow, nodes[i].windowTitle);
         }
         EndWindows();
+        EditorGUILayout.EndScrollView();
     }
 
     void DrawNodeWindow(int id)
@@ -289,10 +303,26 @@ public class NodeEditor : EditorWindow {
     }
     void OnDestroy()
     {
+        foreach(BaseNode n in nodes)
+        {
+            if(n.GetType() == typeof(NoiseNode) || n.GetType() == typeof(CalculationNode))
+            {
+                BaseInputNode temp =  (BaseInputNode)n;
+                temp.outputIsCalculated = false;
+            }
+        }
         AssetDatabase.SaveAssets();
     }
     void OnDisable()
     {
+        foreach (BaseNode n in nodes)
+        {
+            if (n.GetType() == typeof(BaseInputNode))
+            {
+                BaseInputNode temp = (BaseInputNode)n;
+                temp.outputIsCalculated = false;
+            }
+        }
         AssetDatabase.SaveAssets();
     }
 }

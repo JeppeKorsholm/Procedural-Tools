@@ -12,6 +12,7 @@ public class CalculationNode : BaseInputNode {
         Division,
         Multiplication,
         Clamp,
+        ReScale,
         SingleNumber
     }
     public enum InputType
@@ -26,17 +27,18 @@ public class CalculationNode : BaseInputNode {
 
     public Vector2 pastRes;
 
-    string result = "";
     public string[] variableNames = new string[] {"Var 0","Var 1"};
     [SerializeField]
     List<BaseInputNode> inputNodes = new List<BaseInputNode>();
-    float[] inputNumbers = new float[] { 0, 0, 0 };
+    float[] inputNumbers = new float[] { 1, 1, 1 };
     private Rect[] inputNodeRects;
     public float[] viewArray11;
     public float[] viewArray21;
     public float[] viewArray31;
-
+    public Vector2 clampValues;
     bool calculateOutput;
+
+    InputType[] inputType;
     
     public CalculationNode()
     {
@@ -47,58 +49,197 @@ public class CalculationNode : BaseInputNode {
         {
             inputNodes.Add(null);
         }
-        
+        inputType = new InputType[] { InputType.Node, InputType.Node };
+
     }
     public float[][] CalculateOutput()
     {
         output = new float[0][];
-        if (HasInputs())
+        switch (calcType)
         {
-            switch (calcType)
-            {
-                case CalcType.Adition:
+            case CalcType.Adition:
+                if (HasInputs())
+                {
                     output = inputNodes[0] + inputNodes[1];
-                    break;
-                case CalcType.Subtraction:
+                    outputIsCalculated = true;
+                }
+                else
+                    output = null;
+                break;
+            case CalcType.Subtraction:
+                if (HasInputs())
+                {
                     output = inputNodes[0] - inputNodes[1];
-                    break;
-                case CalcType.Division:
+                    outputIsCalculated = true;
+                }
+                else
+                    output = null;
+                break;
+            case CalcType.Division:
+                if (HasInputs())
+                {
                     output = inputNodes[0] / inputNodes[1];
-                    break;
-                case CalcType.Multiplication:
+                    outputIsCalculated = true;
+                }
+                else
+                    output = null;
+                break;
+            case CalcType.Multiplication:
+                if (HasInputs())
+                {
                     output = inputNodes[0] * inputNodes[1];
-                    break;
-            }
-            if (output.Length > 0)
-            {
-                viewArray11 = output[0];
-                viewArray21 = output[1];
-                viewArray31 = output[2];
-            }
-            outputIsCalculated = true;
+                    outputIsCalculated = true;
+                }
+                else
+                    output = null;
+                break;
+            case CalcType.SingleNumber:
+                createArray(out output, (int)resolution.x, (int)(resolution.y),inputNumbers[0]);
+                outputIsCalculated = true;
+                break;
+            case CalcType.Clamp:
+                if(inputNodes[0] != null)
+                {
+                    output = ClampArray(clampValues, inputNodes[0].GiveOutput());
+                    outputIsCalculated = true;
+                }
+                else
+                    output = null;
+                break;
+            case CalcType.ReScale:
+                if (inputNodes[0] != null)
+                {
+                    output = ReScaleArray(inputNodes[0].scale, scale, inputNodes[0].GiveOutput());
+                    outputIsCalculated = true;
+                }
+                else
+                    output = null;
+                break;
+            default:
+                output = null;
+                break;
         }
-        
+        if (output != null && output.Length > 0)
+        {
+            viewArray11 = output[0];
+            viewArray21 = output[1];
+            viewArray31 = output[2];
+        }
+        CalculateScale();
         return output;
+    }
+
+    public void CalculateScale()
+    {
+        
+        switch (calcType)
+        {
+            case CalcType.Adition:
+                if (HasInputs())
+                {
+                    scale = inputNodes[0].scale + inputNodes[1].scale;
+                }
+                break;
+            case CalcType.Subtraction:
+                if (HasInputs())
+                {
+                    scale = inputNodes[0].scale - inputNodes[1].scale;
+
+                }
+                break;
+            case CalcType.Division:
+                if (HasInputs())
+                {
+                    scale = DivideVector( inputNodes[0].scale, inputNodes[1].scale);
+                   
+                }
+                break;
+            case CalcType.Multiplication:
+                if (HasInputs())
+                {
+                    scale= MultiplyVector( inputNodes[0].scale , inputNodes[1].scale);
+                }
+                break;
+            case CalcType.SingleNumber:
+                scale = new Vector2(inputNumbers[0], inputNumbers[0] + 0.00001f);
+                break;
+            case CalcType.Clamp:
+                if (inputNodes[0] != null)
+                {
+                    scale = inputNodes[0].scale;
+                    scale.x = scale.x < clampValues.x ? clampValues.x : scale.x;
+                    scale.y = scale.y > clampValues.y ? clampValues.y : scale.y;
+                }
+                break;
+            case CalcType.ReScale:
+                break;
+            default:
+                break;
+        }
+        if(!HasInputs() && (calcType != CalcType.ReScale && calcType != CalcType.Clamp && calcType != CalcType.SingleNumber))
+        {
+            foreach(BaseInputNode n in inputNodes)
+            {
+                if(n != null)
+                {
+                    scale = n.scale;
+                }
+            }
+        }
+    }
+
+    Vector2 DivideVector(Vector2 a, Vector2 b)
+    {
+        return new Vector2(a.x / b.x, a.y / b.y);
+    }
+    Vector2 MultiplyVector(Vector2 a, Vector2 b)
+    {
+        return new Vector2(a.x * b.x, a.y * b.y);
     }
     public override void DrawWindow()
     {
         base.DrawWindow();
+        float windowHeight = 150;
         Event e = Event.current;
         EditorGUI.BeginChangeCheck();
         calcType = (CalcType)EditorGUILayout.EnumPopup("Calculation Type : ", calcType);
         resolution = EditorGUILayout.Vector2Field("Resolution", resolution);
-
-
+        if (calcType == CalcType.Clamp)
+        {
+            clampValues = EditorGUILayout.Vector2Field("Clamp Values", clampValues);
+            windowHeight += 50;
+        }
+        if (calcType == CalcType.ReScale)
+        {
+            scale = EditorGUILayout.Vector2Field("Number Scale", scale);
+            windowHeight += 50;
+        }
         for (int i = 0; i < variableNames.Length; i++)
         {
-            GUILayout.Label(variableNames[i]);
-            if (e.type == EventType.Repaint)
+            GUILayout.BeginHorizontal();
+            if (inputType[i] == InputType.Node)
             {
-                inputNodeRects[i] = GUILayoutUtility.GetLastRect();
+                GUILayout.Label(variableNames[i]);
+                if (e.type == EventType.Repaint)
+                {
+                    inputNodeRects[i] = GUILayoutUtility.GetLastRect();
+                }
             }
+            else
+            {
+                inputNumbers[i] = EditorGUILayout.FloatField(inputNumbers[i]);
+                if(inputNodes[i] != null)
+                {
+                    inputNodes[i].outputNodes.Remove(this);
+                    inputNodes[i] = null;
+                    variableNames[i] = "Var " + i;
+                }
+            }
+            inputType[i] = (InputType)EditorGUILayout.EnumPopup("", inputType[i], GUILayout.Width(70));
+            GUILayout.EndHorizontal();
         }
-
-        windowRect = new Rect(windowRect.x, windowRect.y, 200, 150);
+        
+        windowRect = new Rect(windowRect.x, windowRect.y, 200, windowHeight);
         if (e.type == EventType.Repaint)
         {
             outputRect = GUILayoutUtility.GetLastRect();
@@ -211,14 +352,11 @@ public class CalculationNode : BaseInputNode {
                     if (!input.outputNodes.Contains(this))
                         input.outputNodes.Add(this);
                     output = CalculateOutput();
-                    if (output.Length > 0)
-                    {
-                        viewArray11 = output[0];
-                        viewArray21 = output[1];
-                        viewArray31 = output[2];
-                    }
+                    
                     outputIsCalculated = false;
+                    
                     iHaveBeenRecalculated();
+                    
                 }
                 else { EditorUtility.DisplayDialog("Infinite Loop Error", "An infinite loop would be created by making that connection", "Okay"); }
             }
@@ -271,15 +409,16 @@ public class CalculationNode : BaseInputNode {
 
     public override float[][] GiveOutput()
     {
-        if (HasInputs())
+        if (!outputIsCalculated)
         {
-            if (!outputIsCalculated)
-            {
-                output = CalculateOutput();
-            }
+            output = CalculateOutput();
+        }
+        if(output != null)
+        {
             return output;
         }
         else
+        {
             foreach (BaseInputNode n in inputNodes)
             {
                 if (n != null)
@@ -287,7 +426,9 @@ public class CalculationNode : BaseInputNode {
                     return n.GiveOutput();
                 }
             }
-        return null;
+        }
+        createArray(out output, 256, 256, 0.5f);
+        return output;
     }
     void createArray(out float[][] array, int width, int depth, float val)
     {

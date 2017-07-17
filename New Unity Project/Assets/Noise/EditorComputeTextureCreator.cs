@@ -56,19 +56,19 @@ public class EditorComputeTextureCreator : MonoBehaviour
 
     private int _Kernel;
     private int _SecondKernel;
-    public float[] output1;
-    public float[] output2;
 
     public Vector2 scale = new Vector2(0, 0);
     public float sum;
 
+    public float[] output1;
+    public float[,] output3;
+    public float[] output2;
+    
+
+
     NoiseSettings curSettings;
     void CreateTexture()
     {
-
-        //texture = new Texture2D(resolution, resolution, TextureFormat.RGB24, true);
-
-
         texture = new RenderTexture(resolution, resolution, 24);
         texture.useMipMap = false;
         texture.wrapMode = TextureWrapMode.Clamp;
@@ -77,86 +77,35 @@ public class EditorComputeTextureCreator : MonoBehaviour
         texture.enableRandomWrite = true;
         texture.Create();
         texture.name = "Procedural Texture";
-        //GetComponent<MeshRenderer>().sharedMaterial.mainTexture = texture;
     }
-
+    void CreateTexture(Vector2 resolution)
+    {
+        texture = new RenderTexture((int)resolution.x, (int)resolution.y, 24);
+        texture.useMipMap = false;
+        texture.wrapMode = TextureWrapMode.Clamp;
+        texture.filterMode = FilterMode.Trilinear;
+        texture.anisoLevel = 9;
+        texture.enableRandomWrite = true;
+        texture.Create();
+        texture.name = "Procedural Texture";
+    }
     void OnEnable()
     {
         textureCreator = this;
         _Kernel = shader.FindKernel("CSMain");
         _SecondKernel = shader.FindKernel("CSSecond");
         pointMaterial = new Material(geometryShader);
-        if (texture == null)
-        {
-            CreateTexture();
-        }
-        FillTexture();
 
-    }
-
-    private void Update()
-    {
-        Debug.Log("calling update");
-        if (transform.hasChanged)
-        {
-            transform.hasChanged = false;
-            FillTexture();
-        }
     }
 
     public void FillTexture()
     {
-        Debug.Log("Filling texture");
         if (texture.width != resolution)
         {
             CreateTexture();
         }
         GenerateAndApplyToTerrain();
     }
-
-
-    void ApplyToTerrain()
-    {
-        Debug.Log("Applying to terrain 1");
-        TerrainData terrainData = terrain.terrainData;
-        terrainData.SetDetailResolution(resolution, 16);
-        float[] terrainHeightsInput = new float[resolution];
-        float[] terrainHeightsOutput = new float[resolution];
-        ComputeBuffer buffer = new ComputeBuffer(terrainHeightsInput.Length, resolution * sizeof(float));
-
-        shader.SetBuffer(_SecondKernel, "SecondResult", buffer);
-        //shader.SetFloats("SecondResult", terrainHeightsOutput);
-        shader.Dispatch(_SecondKernel, resolution / 8, resolution / 8, 1);
-        buffer.GetData(terrainHeightsOutput);
-
-        float[,] noiseHeightData = new float[resolution, resolution];
-        //Texture2D tempText = new Texture2D(resolution, resolution, TextureFormat.RGB24, true);
-
-        //texture.
-        for (int i = 0; i < resolution; i++)
-        {
-            for (int j = 0; j < resolution; j++)
-            {
-                noiseHeightData[j, i] = ((terrainHeightsOutput[(j) + resolution * i])); //((terrainHeightsOutput[(j / resolution) + i]) + terrainHeightsOutput[(i / resolution) + j]) * amplitude;
-                //Color newColor = Color.white * ((terrainHeightsOutput[(j / resolution) + i]) + terrainHeightsOutput[(i / resolution) + j]);
-                //tempText.SetPixel(j, i,newColor);
-            }
-        }
-        //tempText.Apply();
-        //tempText.name = "New Text";
-        //GetComponent<MeshRenderer>().material.mainTexture = tempText;
-
-        //shader.SetTexture(_SecondKernel, "Result", texture);
-        //shader.Dispatch(_SecondKernel, resolution / 8, resolution / 8, 1);
-
-        Debug.Log(noiseHeightData[5, 5]);
-        terrainData.SetHeights(0, 0, noiseHeightData);
-        buffer.Dispose();
-
-
-        // Clean up
-    }
-
     struct NoiseInfo
     {
         public int noiseType;
@@ -169,7 +118,7 @@ public class EditorComputeTextureCreator : MonoBehaviour
     }
     void GenerateAndApplyToTerrain()
     {
-        Debug.Log("Applying to terrain");
+        Debug.Log("Generating and Applying to terrain");
         //Vector3 vectransform = new Vector3(noiseScale.x * noiseOffset.x, noiseScale.y * noiseOffset.y, noiseScale.z* noiseOffset.z);
         Vector3 point00 = transform.TransformPoint(new Vector3(-0.5f * noiseScale.x, -0.5f * noiseScale.y) + noiseOffset);
         Vector3 point10 = transform.TransformPoint(new Vector3(0.5f * noiseScale.x, -0.5f * noiseScale.y) + noiseOffset);
@@ -368,8 +317,15 @@ public class EditorComputeTextureCreator : MonoBehaviour
     }
     public float[][] GenerateNoise(NoiseSettings settings, Vector2 resolution)
     {
+        
+        int resolutionX = (int)resolution.x;
+        int resolutionY = (int)resolution.y;
+       /* if (texture.width != resolutionY || texture.height != resolutionX)
+        {
+            CreateTexture(resolution);
+        }*/
+        CreateTexture(resolution);
         curSettings = settings;
-        Debug.Log("Generating noise");
         Vector3 point00 = transform.TransformPoint(new Vector3(-0.5f * noiseScale.x, -0.5f * noiseScale.y) + noiseOffset);
         Vector3 point10 = transform.TransformPoint(new Vector3(0.5f * noiseScale.x, -0.5f * noiseScale.y) + noiseOffset);
         Vector3 point01 = transform.TransformPoint(new Vector3(-0.5f * noiseScale.x, 0.5f * noiseScale.y) + noiseOffset);
@@ -386,14 +342,14 @@ public class EditorComputeTextureCreator : MonoBehaviour
         shader.Dispatch(_SecondKernel, posArray.Length, 1, 1);
 
         shader.SetTexture(_SecondKernel, "Result", texture);
-        shader.Dispatch(_Kernel, (int)resolution.x / 8, (int)resolution.y / 8, 1);
+        shader.Dispatch(_Kernel, resolutionX / 8, resolutionY / 8, 1);
 
         TerrainData terrainData = terrain.terrainData;
         //terrainData.SetDetailResolution(resolution, 16);
 
 
-        float[] terrainHeightsInput = new float[(int)(resolution.x * resolution.y)];
-        float[] terrainHeightsOutput = new float[(int)(resolution.x * resolution.y)];
+        float[] terrainHeightsInput = new float[resolutionX * resolutionY];
+        float[] terrainHeightsOutput = new float[resolutionX * resolutionY];
         NoiseInfo[] noiseInputs = new NoiseInfo[1];
         //Copy noise values from noiseSettings to noiseInputs
 
@@ -407,7 +363,6 @@ public class EditorComputeTextureCreator : MonoBehaviour
             noiseInputs[i].octaves = settings.octaves;
             noiseInputs[i].amplitude = settings.damping ? settings.strength / settings.frequency : settings.strength;
         }
-
         ComputeBuffer buffer = new ComputeBuffer(terrainHeightsInput.Length, sizeof(float));
         ComputeBuffer noiseInfoBuffer = new ComputeBuffer(noiseInputs.Length, (sizeof(float) * 5) + sizeof(int) * 2);
         //Set noise information into buffer
@@ -416,18 +371,15 @@ public class EditorComputeTextureCreator : MonoBehaviour
 
         shader.SetBuffer(_SecondKernel, "SecondResult", buffer);
 
-        shader.Dispatch(_SecondKernel, (int)resolution.x / 8, (int)resolution.y / 8, 1);
+        shader.Dispatch(_SecondKernel, resolutionX / 8, resolutionY / 8, 1);
         buffer.GetData(terrainHeightsOutput);
 
-        noiseInfoBuffer.Dispose();
-        buffer.Dispose();
-        positionBuffer.Dispose();
         //output2 = SectionOfArray( terrainHeightsOutput, 0, 256);
-        float[][] tempOutput = new float[(int)resolution.x][];
-
-        scale = new Vector2(0, 0);
+        float[][] tempOutput = new float[resolutionX][];
+        //output2 = SectionOfArray(terrainHeightsOutput, 0, 2048);
+        scale = new Vector2(terrainHeightsOutput[0], terrainHeightsOutput[0]);
         float sum = 0;
-        foreach(float n in terrainHeightsOutput)
+        foreach (float n in terrainHeightsOutput)
         {
             sum += Mathf.Abs(n);
             if (n > scale.y) scale.y = n;
@@ -435,15 +387,21 @@ public class EditorComputeTextureCreator : MonoBehaviour
         }
         sum /= terrainHeightsOutput.Length;
         this.sum = sum;
-        for (int x = 0; x < (int)resolution.x; x++)
+        for (int x = 0; x < resolutionX; x++)
         {
-            tempOutput[x] = new float[(int)resolution.y];
-            for (int y = 0; y < resolution.y; y++)
+            tempOutput[x] = new float[resolutionY];
+            for (int y = 0; y < resolutionY; y++)
             {
-                tempOutput[x][y] = ((terrainHeightsOutput[(y) + (int)resolution.x * x])); //* settings.strength;// * noiseSettings.amplitude;
+                tempOutput[x][y] = ((terrainHeightsOutput[(x) + resolutionX * y])); //* settings.strength;// * noiseSettings.amplitude;
             }
 
         }
+
+
+
+        noiseInfoBuffer.Dispose();
+        buffer.Dispose();
+        positionBuffer.Dispose();
         return tempOutput;
     }
 

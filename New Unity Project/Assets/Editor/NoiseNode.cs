@@ -87,6 +87,7 @@ public class NoiseNode : BaseInputNode
         {
             hSliderVal[i] = maxVal[i] / 2;
         }
+        textureCreator = EditorComputeTextureCreator.textureCreator;
     }
     public Vector2 pastRes;
     public override void DrawWindow()
@@ -97,7 +98,7 @@ public class NoiseNode : BaseInputNode
         
         noiseType = (NoiseTypes)EditorGUILayout.EnumPopup("Noise Type : ", noiseType);
         resolution = EditorGUILayout.Vector2Field("Resolution", resolution);
-        scale = EditorGUILayout.Vector2Field("Scale", scale);
+        scale = EditorGUILayout.Vector2Field("Number Scale", scale);
         if (advancedOptions)
         {
             if (extendedOptions)
@@ -413,7 +414,6 @@ public class NoiseNode : BaseInputNode
             Vector2 tempRes = resolution;
             if (tempRes.x < 8) tempRes.x = 8;
             if (tempRes.y < 8) tempRes.y = 8;
-            Debug.Log("Calculating output");
             NoiseSettings tempSettings = new NoiseSettings();
 
             tempSettings.strength = hSliderVal[0];
@@ -424,12 +424,13 @@ public class NoiseNode : BaseInputNode
             tempSettings.persistence = hSliderVal[6];
             tempSettings.weight = hSliderVal[7];
             tempSettings.damping = dampening;
-            output = EditorComputeTextureCreator.textureCreator.GenerateNoise(tempSettings, tempRes);
+            output = EditorComputeTextureCreator.textureCreator.GenerateNoise(tempSettings/*EditorComputeTextureCreator.textureCreator.noiseSettings[0]*/, tempRes/*new Vector2(512,512)*/);
             outputIsCalculated = true;
             if(output.Length > (int)resolution.x || output[0].Length > (int)resolution.y)
             {
                 output = CombineArrays(output, resolution, true);
             }
+            output = ReScaleArray(GetScale(output), scale, output);
             viewArray1 = output[0];
             viewArray2 = output[1];
             viewArray3 = output[2];
@@ -437,7 +438,6 @@ public class NoiseNode : BaseInputNode
         }
         else
         {
-            Debug.Log("Giving output");
             viewArray1 = output[0];
             viewArray2 = output[1];
             viewArray3 = output[2];
@@ -450,7 +450,6 @@ public class NoiseNode : BaseInputNode
     }
     void createArray(out float[][] array, int width, int depth)
     {
-        Debug.Log("creating array");
         float[][] temp = new float[width][];
         for(int x = 0; x < width; x++)
         {
@@ -471,6 +470,21 @@ public class NoiseNode : BaseInputNode
             }
         }
         array = temp;
+    }
+    float[][] createArray(Vector2 resolution, float val)
+    {
+        int width = (int)resolution.x;
+        int depth = (int)resolution.y;
+        float[][] temp = new float[width][];
+        for (int x = 0; x < width; x++)
+        {
+            temp[x] = new float[depth];
+            for (int y = 0; y < depth; y++)
+            {
+                temp[x][y] = val;
+            }
+        }
+        return temp;
     }
     void createArray(out float[][] array, int width, int depth, Vector2 vals)
     {
