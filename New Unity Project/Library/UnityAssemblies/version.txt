@@ -1,3 +1,16 @@
+<<<<<<< HEAD
+5.6.0f3:3.0.0.1
+StandaloneWindows
+C:/Program Files/Unity/Editor/Data/Managed/UnityEngine.dll
+C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll
+C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/Networking/UnityEngine.Networking.dll
+C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/TestRunner/UnityEngine.TestRunner.dll
+C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/TestRunner/nunit.framework.dll
+C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/UnityAnalytics/UnityEngine.Analytics.dll
+C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/UnityHoloLens/RuntimeEditor/UnityEngine.HoloLens.dll
+C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/UnityVR/RuntimeEditor/UnityEngine.VR.dll
+C:/Program Files/Unity/Editor/Data/Managed/UnityEditor.dll
+=======
 5.6.0f3:2.8.2.0
 StandaloneWindows
 E:/Unity/Editor/Data/Managed/UnityEngine.dll
@@ -21,3 +34,4 @@ E:/Unity/Editor/Data/UnityExtensions/Unity/UnityVR/Editor/UnityEditor.VR.dll
 E:/Unity/Editor/Data/Managed/UnityEditor.Graphs.dll
 E:/Unity/Editor/Data/PlaybackEngines/windowsstandalonesupport/UnityEditor.WindowsStandalone.Extensions.dll
 C:/Program Files (x86)/Microsoft Visual Studio Tools for Unity/2015/Editor/SyntaxTree.VisualStudio.Unity.Bridge.dll
+>>>>>>> origin/master
