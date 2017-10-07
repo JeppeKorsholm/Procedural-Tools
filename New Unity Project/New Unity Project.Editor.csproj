@@ -135,6 +135,7 @@
     <Compile Include="Assets\Editor\NoiseNode.cs" />
     <Compile Include="Assets\Editor\OutputNode.cs" />
     <Compile Include="Assets\Editor\TextureCreatorInspector.cs" />
+    <Compile Include="Assets\Editor\WaveNode.cs" />
     <Compile Include="Assets\Editor\WindowEditorNodeSaver.cs" />
     <Compile Include="Assets\ProceduralToolkit\Editor\MeshFilterExtension.cs" />
     <Compile Include="Assets\ProceduralToolkit\Editor\ProceduralToolkitMenu.cs" />

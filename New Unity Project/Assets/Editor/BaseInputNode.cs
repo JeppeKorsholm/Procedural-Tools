@@ -51,7 +51,7 @@ public class FloatArray2D
 public class BaseInputNode : BaseNode {
     public Vector2 resolution;
     public List<BaseNode> outputNodes;
-    public Vector2 scale;
+    public Vector2 numberScale;
     public bool outputIsCalculated;
     public EditorComputeTextureCreator textureCreator;
     float[][] output;
@@ -59,7 +59,7 @@ public class BaseInputNode : BaseNode {
     {
         outputNodes = new List<BaseNode>();
         hasInput = true;
-        scale = new Vector2(0, 1);
+        numberScale = new Vector2(0, 1);
     }
     public override void DrawWindow()
     {
@@ -829,5 +829,79 @@ public class BaseInputNode : BaseNode {
     {
         outputIsCalculated = false;
         AssetDatabase.SaveAssets();
+    }
+
+    void createArray(out float[][] array, int width, int depth)
+    {
+        float[][] temp = new float[width][];
+        for (int x = 0; x < width; x++)
+        {
+            temp[x] = new float[depth];
+        }
+        array = temp;
+    }
+    void createArray(out float[][] array, int width, int depth, float val)
+    {
+        Debug.Log("creating array with val " + val);
+        float[][] temp = new float[width][];
+        for (int x = 0; x < width; x++)
+        {
+            temp[x] = new float[depth];
+            for (int y = 0; y < depth; y++)
+            {
+                temp[x][y] = val;
+            }
+        }
+        array = temp;
+    }
+    float[][] createArray(Vector2 resolution, float val)
+    {
+        int width = (int)resolution.x;
+        int depth = (int)resolution.y;
+        float[][] temp = new float[width][];
+        for (int x = 0; x < width; x++)
+        {
+            temp[x] = new float[depth];
+            for (int y = 0; y < depth; y++)
+            {
+                temp[x][y] = val;
+            }
+        }
+        return temp;
+    }
+    void createArray(out float[][] array, int width, int depth, Vector2 vals)
+    {
+        Debug.Log("creating array with val " + vals);
+        float[][] temp = new float[width][];
+        for (int x = 0; x < width - 1; x += 2)
+        {
+            temp[x] = new float[depth];
+            temp[x + 1] = new float[depth];
+            for (int y = 0; y < depth - 1; y += 2)
+            {
+                temp[x][y] = vals.x;
+                temp[x + 1][y] = vals.y;
+                temp[x][y + 1] = vals.y;
+                temp[x + 1][y + 1] = vals.x;
+            }
+        }
+        array = temp;
+    }
+    void createArray(out float[][] array, int width, int depth, float val, bool consecutiveNumbers)
+    {
+        Debug.Log("creating array with val " + val);
+        float[][] temp = new float[width][];
+        for (int x = 0; x < width; x++)
+        {
+            temp[x] = new float[depth];
+            for (int y = 0; y < depth; y++)
+            {
+                if (consecutiveNumbers)
+                    temp[x][y] = y + val;
+                else
+                    temp[x][y] = y + x * val;
+            }
+        }
+        array = temp;
     }
 }

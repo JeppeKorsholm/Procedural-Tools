@@ -109,7 +109,7 @@ public class CalculationNode : BaseInputNode {
             case CalcType.ReScale:
                 if (inputNodes[0] != null)
                 {
-                    output = ReScaleArray(inputNodes[0].scale, scale, inputNodes[0].GiveOutput());
+                    output = ReScaleArray(inputNodes[0].numberScale, numberScale, inputNodes[0].GiveOutput());
                     outputIsCalculated = true;
                 }
                 else
@@ -137,38 +137,38 @@ public class CalculationNode : BaseInputNode {
             case CalcType.Adition:
                 if (HasInputs())
                 {
-                    scale = inputNodes[0].scale + inputNodes[1].scale;
+                    numberScale = inputNodes[0].numberScale + inputNodes[1].numberScale;
                 }
                 break;
             case CalcType.Subtraction:
                 if (HasInputs())
                 {
-                    scale = inputNodes[0].scale - inputNodes[1].scale;
+                    numberScale = inputNodes[0].numberScale - inputNodes[1].numberScale;
 
                 }
                 break;
             case CalcType.Division:
                 if (HasInputs())
                 {
-                    scale = DivideVector( inputNodes[0].scale, inputNodes[1].scale);
+                    numberScale = DivideVector( inputNodes[0].numberScale, inputNodes[1].numberScale);
                    
                 }
                 break;
             case CalcType.Multiplication:
                 if (HasInputs())
                 {
-                    scale= MultiplyVector( inputNodes[0].scale , inputNodes[1].scale);
+                    numberScale= MultiplyVector( inputNodes[0].numberScale , inputNodes[1].numberScale);
                 }
                 break;
             case CalcType.SingleNumber:
-                scale = new Vector2(inputNumbers[0], inputNumbers[0] + 0.00001f);
+                numberScale = new Vector2(inputNumbers[0], inputNumbers[0] + 0.00001f);
                 break;
             case CalcType.Clamp:
                 if (inputNodes[0] != null)
                 {
-                    scale = inputNodes[0].scale;
-                    scale.x = scale.x < clampValues.x ? clampValues.x : scale.x;
-                    scale.y = scale.y > clampValues.y ? clampValues.y : scale.y;
+                    numberScale = inputNodes[0].numberScale;
+                    numberScale.x = numberScale.x < clampValues.x ? clampValues.x : numberScale.x;
+                    numberScale.y = numberScale.y > clampValues.y ? clampValues.y : numberScale.y;
                 }
                 break;
             case CalcType.ReScale:
@@ -182,7 +182,7 @@ public class CalculationNode : BaseInputNode {
             {
                 if(n != null)
                 {
-                    scale = n.scale;
+                    numberScale = n.numberScale;
                 }
             }
         }
@@ -211,7 +211,7 @@ public class CalculationNode : BaseInputNode {
         }
         if (calcType == CalcType.ReScale)
         {
-            scale = EditorGUILayout.Vector2Field("Number Scale", scale);
+            numberScale = EditorGUILayout.Vector2Field("Number Scale", numberScale);
             windowHeight += 50;
         }
         for (int i = 0; i < variableNames.Length; i++)

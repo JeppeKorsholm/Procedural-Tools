@@ -404,6 +404,95 @@ public class EditorComputeTextureCreator : MonoBehaviour
         positionBuffer.Dispose();
         return tempOutput;
     }
+    public float[][] GenerateNoise(NoiseSettings settings, Vector2 resolution,Vector2 scale, Vector3 offset)
+    {
+
+        int resolutionX = (int)resolution.x;
+        int resolutionY = (int)resolution.y;
+        /* if (texture.width != resolutionY || texture.height != resolutionX)
+         {
+             CreateTexture(resolution);
+         }*/
+        CreateTexture(resolution);
+        curSettings = settings;
+        Vector3 point00 = transform.TransformPoint(new Vector3(-0.5f * scale.x, -0.5f * scale.y) + offset);
+        Vector3 point10 = transform.TransformPoint(new Vector3(0.5f * scale.x, -0.5f * scale.y) + offset);
+        Vector3 point01 = transform.TransformPoint(new Vector3(-0.5f * scale.x, 0.5f * scale.y) + offset);
+        Vector3 point11 = transform.TransformPoint(new Vector3(0.5f * scale.x, 0.5f * scale.y) + offset);
+
+        Vector3[] posArray = { point00, point01, point10, point11 };
+
+
+        ComputeBuffer positionBuffer = new ComputeBuffer(posArray.Length, 12);
+        positionBuffer.SetData(posArray);
+
+
+        shader.SetBuffer(_SecondKernel, "worldPositions", positionBuffer);
+        shader.Dispatch(_SecondKernel, posArray.Length, 1, 1);
+
+        shader.SetTexture(_SecondKernel, "Result", texture);
+        shader.Dispatch(_Kernel, resolutionX / 8, resolutionY / 8, 1);
+
+        TerrainData terrainData = terrain.terrainData;
+        //terrainData.SetDetailResolution(resolution, 16);
+
+
+        float[] terrainHeightsInput = new float[resolutionX * resolutionY];
+        float[] terrainHeightsOutput = new float[resolutionX * resolutionY];
+        NoiseInfo[] noiseInputs = new NoiseInfo[1];
+        //Copy noise values from noiseSettings to noiseInputs
+
+        for (int i = 0; i < noiseInputs.Length; i++)
+        {
+            noiseInputs[i].noiseType = (int)settings.noiseType;
+            noiseInputs[i].weight = settings.weight;
+            noiseInputs[i].frequency = settings.frequency;
+            noiseInputs[i].lacunarity = settings.lacunarity;
+            noiseInputs[i].persistence = settings.persistence;
+            noiseInputs[i].octaves = settings.octaves;
+            noiseInputs[i].amplitude = settings.damping ? settings.strength / settings.frequency : settings.strength;
+        }
+        ComputeBuffer buffer = new ComputeBuffer(terrainHeightsInput.Length, sizeof(float));
+        ComputeBuffer noiseInfoBuffer = new ComputeBuffer(noiseInputs.Length, (sizeof(float) * 5) + sizeof(int) * 2);
+        //Set noise information into buffer
+        noiseInfoBuffer.SetData(noiseInputs);
+        shader.SetBuffer(_SecondKernel, "noiseInfoBuffer", noiseInfoBuffer);
+
+        shader.SetBuffer(_SecondKernel, "SecondResult", buffer);
+
+        shader.Dispatch(_SecondKernel, resolutionX / 8, resolutionY / 8, 1);
+        buffer.GetData(terrainHeightsOutput);
+
+        //output2 = SectionOfArray( terrainHeightsOutput, 0, 256);
+        float[][] tempOutput = new float[resolutionX][];
+        //output2 = SectionOfArray(terrainHeightsOutput, 0, 2048);
+        scale = new Vector2(terrainHeightsOutput[0], terrainHeightsOutput[0]);
+        float sum = 0;
+        foreach (float n in terrainHeightsOutput)
+        {
+            sum += Mathf.Abs(n);
+            if (n > scale.y) scale.y = n;
+            if (n < scale.x) scale.x = n;
+        }
+        sum /= terrainHeightsOutput.Length;
+        this.sum = sum;
+        for (int x = 0; x < resolutionX; x++)
+        {
+            tempOutput[x] = new float[resolutionY];
+            for (int y = 0; y < resolutionY; y++)
+            {
+                tempOutput[x][y] = ((terrainHeightsOutput[(x) + resolutionX * y])); //* settings.strength;// * noiseSettings.amplitude;
+            }
+
+        }
+
+
+
+        noiseInfoBuffer.Dispose();
+        buffer.Dispose();
+        positionBuffer.Dispose();
+        return tempOutput;
+    }
 
     public float[,] GetCurve(float interval)
     {

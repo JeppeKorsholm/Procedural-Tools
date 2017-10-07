@@ -80,6 +80,7 @@ public class NodeEditor : EditorWindow {
                     menu.AddItem(new GUIContent("Add Noise Node"), false, ContextCallback, "noiseNode");
                     menu.AddItem(new GUIContent("Add Output Node"), false, ContextCallback, "outputNode");
                     menu.AddItem(new GUIContent("Add Calculation Node"), false, ContextCallback, "calculationNode");
+                    menu.AddItem(new GUIContent("Add Wave Node"), false, ContextCallback, "waveNode");
                     menu.ShowAsContext();
                     e.Use();
                 }
@@ -214,6 +215,17 @@ public class NodeEditor : EditorWindow {
         else if (clb.Equals("outputNode"))
         {
             OutputNode noiseNode = new OutputNode();
+            noiseNode.windowRect = new Rect(mousePos, new Vector2(200, 200));
+            nodes.Add(noiseNode);
+            noiseNode.name = "zzz" + noiseNode.name + saver.assetAmount.ToString();
+            saver.assetAmount += 1;
+            saver.nodes.Add(noiseNode);
+            AssetDatabase.AddObjectToAsset(noiseNode, pathName);
+            AssetDatabase.SaveAssets();
+        }
+        else if (clb.Equals("waveNode"))
+        {
+            WaveNode noiseNode = new WaveNode();
             noiseNode.windowRect = new Rect(mousePos, new Vector2(200, 200));
             nodes.Add(noiseNode);
             noiseNode.name = "zzz" + noiseNode.name + saver.assetAmount.ToString();

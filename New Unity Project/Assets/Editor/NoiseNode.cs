@@ -25,6 +25,9 @@ public class NoiseNode : BaseInputNode
     [SerializeField]
     //private List<List<BaseInputNode>> inputNodes = new List<List<BaseInputNode>>();
     private List<ListWrapper> inputNodes = new List<ListWrapper>();
+
+    [SerializeField]
+    private Vector3 noiseAreaScale = Vector3.one;
     [SerializeField]
     private Rect[] inputNodeRects;
     [SerializeField]
@@ -98,25 +101,26 @@ public class NoiseNode : BaseInputNode
         
         noiseType = (NoiseTypes)EditorGUILayout.EnumPopup("Noise Type : ", noiseType);
         resolution = EditorGUILayout.Vector2Field("Resolution", resolution);
-        scale = EditorGUILayout.Vector2Field("Number Scale", scale);
+        noiseAreaScale = EditorGUILayout.Vector3Field("Noise Scale", noiseAreaScale);
+        numberScale = EditorGUILayout.Vector2Field("Number Scale", numberScale);
         if (advancedOptions)
         {
             if (extendedOptions)
             {
                 GUILayout.BeginHorizontal();
                 minScale = (EditorGUILayout.FloatField(minScale, GUILayout.Width(40)));
-                EditorGUILayout.MinMaxSlider(ref scale.x, ref scale.y, minScale, maxScale, GUILayout.Width(100));
+                EditorGUILayout.MinMaxSlider(ref numberScale.x, ref numberScale.y, minScale, maxScale, GUILayout.Width(100));
                 maxScale = (EditorGUILayout.FloatField(maxScale, GUILayout.Width(40)));
                 GUILayout.EndHorizontal();
             }
             else
             {
-                EditorGUILayout.MinMaxSlider(ref scale.x, ref scale.y, minScale, maxScale);
+                EditorGUILayout.MinMaxSlider(ref numberScale.x, ref numberScale.y, minScale, maxScale);
             }
         }
         //if (scale.x >= scale.y - 0.1) scale.x = scale.y - 0.1f;
-        if (scale.x < minScale) scale.x = minScale;
-        if (scale.y < minScale) scale.y = minScale + 0.1f;
+        if (numberScale.x < minScale) numberScale.x = minScale;
+        if (numberScale.y < minScale) numberScale.y = minScale + 0.1f;
         if (inputNodes.Count > 0)
         {
             //input1Title = inputNode.GetResult();
@@ -424,13 +428,13 @@ public class NoiseNode : BaseInputNode
             tempSettings.persistence = hSliderVal[6];
             tempSettings.weight = hSliderVal[7];
             tempSettings.damping = dampening;
-            output = EditorComputeTextureCreator.textureCreator.GenerateNoise(tempSettings/*EditorComputeTextureCreator.textureCreator.noiseSettings[0]*/, tempRes/*new Vector2(512,512)*/);
+            output = EditorComputeTextureCreator.textureCreator.GenerateNoise(tempSettings/*EditorComputeTextureCreator.textureCreator.noiseSettings[0]*/, tempRes/*new Vector2(512,512)*/, noiseAreaScale,new Vector3(hSliderVal[1],hSliderVal[2],0));
             outputIsCalculated = true;
             if(output.Length > (int)resolution.x || output[0].Length > (int)resolution.y)
             {
                 output = CombineArrays(output, resolution, true);
             }
-            output = ReScaleArray(GetScale(output), scale, output);
+            output = ReScaleArray(GetScale(output), numberScale, output);
             viewArray1 = output[0];
             viewArray2 = output[1];
             viewArray3 = output[2];
@@ -447,78 +451,5 @@ public class NoiseNode : BaseInputNode
     public override float[] GiveOutput(Vector2 res)
     {
         return base.GiveOutput(res);
-    }
-    void createArray(out float[][] array, int width, int depth)
-    {
-        float[][] temp = new float[width][];
-        for(int x = 0; x < width; x++)
-        {
-            temp[x] = new float[depth];
-        }
-        array = temp;
-    }
-    void createArray(out float[][] array, int width, int depth, float val)
-    {
-        Debug.Log("creating array with val " + val);
-        float[][] temp = new float[width][];
-        for (int x = 0; x < width; x++)
-        {
-            temp[x] = new float[depth];
-            for (int y = 0; y < depth; y++)
-            {
-                temp[x][y] = val;
-            }
-        }
-        array = temp;
-    }
-    float[][] createArray(Vector2 resolution, float val)
-    {
-        int width = (int)resolution.x;
-        int depth = (int)resolution.y;
-        float[][] temp = new float[width][];
-        for (int x = 0; x < width; x++)
-        {
-            temp[x] = new float[depth];
-            for (int y = 0; y < depth; y++)
-            {
-                temp[x][y] = val;
-            }
-        }
-        return temp;
-    }
-    void createArray(out float[][] array, int width, int depth, Vector2 vals)
-    {
-        Debug.Log("creating array with val " + vals);
-        float[][] temp = new float[width][];
-        for (int x = 0; x < width-1; x+=2)
-        {
-            temp[x] = new float[depth];
-            temp[x+1] = new float[depth];
-            for (int y = 0; y < depth-1; y+=2)
-            {
-                temp[x][y] = vals.x;
-                temp[x+1][y] = vals.y;
-                temp[x][y+1] = vals.y;
-                temp[x + 1][y+1] = vals.x;
-            }
-        }
-        array = temp;
-    }
-    void createArray(out float[][] array, int width, int depth, float val, bool consecutiveNumbers)
-    {
-        Debug.Log("creating array with val " + val);
-        float[][] temp = new float[width][];
-        for (int x = 0; x < width; x++)
-        {
-            temp[x] = new float[depth];
-            for (int y = 0; y < depth; y++)
-            {
-                if (consecutiveNumbers)
-                    temp[x][y] = y + val;
-                else
-                    temp[x][y] = y + x * val;
-            }
-        }
-        array = temp;
     }
 }
